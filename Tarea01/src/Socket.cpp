@@ -1,145 +1,112 @@
 
 #include "Socket.hpp"
 
-/**
- * @brief Socket constructor
- * @param type Specifies the communication semantics
- * @param ipv6 Indicates if ipv6 is used
+/* 
+   char tipo: el tipo de socket que quiere definir
+      's' para "stream
+      'd' para "datagram"   if(!ipv6){
+   bool ipv6: si queremos un socket para IPv6
  */
-Socket::Socket(char type, bool ipv6) {
-  this->ipv6 = ipv6;
-  this->id = -1;
-  this->port = DEFAULT_PORT;
-  this->SSLStruct = nullptr;
-  this->SSLContext = nullptr;
-  if (!this->ipv6)
-    this->id = type == 's' ? socket(AF_INET, SOCK_STREAM, 0)
-                           : socket(AF_INET, SOCK_DGRAM, 0);
-  else
-    this->id = type == 's' ? socket(AF_INET6, SOCK_STREAM, 0)
-                           : socket(AF_INET6, SOCK_DGRAM, 0);
+Socket::Socket( char type, bool ipv6 ){
+   this->ipv6 = ipv6;
+   size_t socketType;
+   size_t domain;
+
+   socketType = (type == 's') ? SOCK_STREAM : SOCK_DGRAM;
+   domain = this->ipv6 ? AF_INET6 : AF_INET;
+
+   idSocket = socket(domain, socketType, 0);
+
+   // SSL
+   this->SSLContext = NULL;
+   this->SSLStruct = NULL;
 }
 
-Socket::Socket( int id ) {
-  this->id = id;
-}
 
-/**
- * @brief Method that closes a socket
- */
-Socket::~Socket() {
-  this->Close();
+Socket::~Socket(){
+   Close();
+
+   //SSL 
+   if (this->SSLContext) {
+      SSL_CTX_free( (SSL_CTX *) this->SSLContext );
+   }
+   if (this->SSLStruct) {
+      SSL_free( (SSL *) this->SSLStruct );
+   }
 }
 
 void Socket::Close(){
-  close(this->id);
+   close(this->idSocket);
 }
 
-/**
- * @brief Method that connects with a port and an ip address
- * @param hostip Ip address
- * @param port Port number
- * @return int 
- */
-int Socket::Connect(const char* hostip, int port) {
-  struct sockaddr_in host4;
-  memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
-  host4.sin_family = AF_INET;
-  inet_pton(AF_INET, hostip, &host4.sin_addr);
-  host4.sin_port = htons(port);
-  int st = connect(this->id, reinterpret_cast<sockaddr *>(&host4),
-    sizeof(host4));
-  if (st == -1) {
-    perror("Socket::Connect");
-    exit(2);
-  }
-  return st;
+int Socket::Connect( const char * hostip, int port ) {
+   struct sockaddr_in host4;
+
+   memset( (char *) &host4, 0, sizeof( host4 ) );
+   host4.sin_family = AF_INET;
+   inet_pton( AF_INET, hostip, &host4.sin_addr );
+   host4.sin_port = htons( port );
+   int st = connect( idSocket, (sockaddr *) &host4, sizeof( host4 ) );
+   if ( -1 == st ) {
+      perror( "Socket::Connect" );
+      exit( 2 );
+   }
+   return st;
 }
 
-/**
- * @brief Method that connects with a port and an ip address
- * @param hostip Ip address
- * @param port Port address
- * @return int 
- */
-int Socket::Connect(const char* hostip, const char* port) {
-  struct sockaddr_in host4;
-  memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
-  host4.sin_family = AF_INET;
-  inet_pton(AF_INET, hostip, &host4.sin_addr);
-  host4.sin_port = htons(atoi(port));
-  int st = connect(this->id, reinterpret_cast<sockaddr *>(&host4),
-           sizeof(host4));
-  if (st == -1) {
-    perror("Socket::Connect");
-    exit(2);
-  }
-  return st;
+
+void Socket::InitSSLContext() {
+   const SSL_METHOD * method = TLS_client_method();
+   SSL_CTX * context = SSL_CTX_new(method);
+   if (!context) {
+      perror( "Socket::InitSSLContext" );
+      exit( 23 );
+   }
+   this->SSLContext = (void *) context;
 }
 
-/**
- * @brief Method that connects with a port and an ip address
- * in IPV6
- * @param hostip Ip address
- * @param port Port address
- * @return int 
- */
-int Socket::ConnectIPV6(const char* hostip, int port) {
-  struct sockaddr_in6 host6;
-  memset(reinterpret_cast<char *>(&host6), 0, sizeof(host6));
-  host6.sin6_family = AF_INET6;
-  inet_pton(AF_INET6, hostip, &host6.sin6_addr);
-  host6.sin6_port = htons(port);
-  int st = connect(this->id, reinterpret_cast<sockaddr *>(&host6),
-           sizeof(host6));
-  if (st == -1) {
-    perror("Socket::Connect");
-    exit(2);
-  }
-  return st;
+void Socket::InitSSL() {
+   this->InitSSLContext();
+   SSL * ssl = SSL_new( ((SSL_CTX *) this->SSLContext ) );
+   if (!ssl) {
+      perror( "Socket::InitSSL" );
+      exit( 23 );
+   }
+   this->SSLStruct = (void *) ssl;
 }
 
-/**
- * @brief Method that connects with a port and an ip address
- * in IPV6
- * @param hostip Ip address
- * @param port Port address
- * @return int 
- */
-int Socket::ConnectIPV6(const char* hostip, const char* port) {
-  struct sockaddr_in6 host6;
-  memset(reinterpret_cast<char *>(&host6), 0, sizeof(host6));
-  host6.sin6_family = AF_INET6;
-  inet_pton(AF_INET6, hostip, &host6.sin6_addr);
-  host6.sin6_port = htons(atoi(port));
-  int st = connect(this->id, reinterpret_cast<sockaddr *>(&host6),
-           sizeof(host6));
-  if (st == -1) {
-    perror("Socket::Connect");
-    exit(2);
-  }
-  return st;
+int Socket::SSLConnect( char * host, int port ) {
+   int st;
+   this->Connect( host, port );
+   SSL_set_fd( (SSL *) this->SSLStruct, this->idSocket );
+   st = SSL_connect( (SSL *) this->SSLStruct );
+   if ( -1 == st ) {
+      perror( "Socket::SSLConnect" );
+      exit( 23 );
+   }
+   return st;
 }
 
-/**
- * @brief Method that reads from a socket
- * @param info Information to read
- * @param length Size of the information vector
- * @return int 
- */
-int Socket::Read(char* info, int length) {
-  return read(this->id, info, length);
+int Socket::SSLConnect( char * host, char * service){
+   return -1;
 }
 
-/**
- * @brief Method that writes to a socket
- * @param info Information to write
- * @return int 
- */
-int Socket::Write(const char* info) {
-  return write(this->id, info, strlen(info));
+int Socket::SSLRead( void * buffer, int size){
+   int st;
+   st = SSL_read( (SSL *) this->SSLStruct, buffer, size );
+   if ( -1 == st ) {
+      perror( "Socket::SSLRead" );
+      exit( 23 );
+   }
+   return st;
 }
 
-/**
- * @brief 
- */
+int Socket::SSLWrite( void * buffer, int size){
+   int st;
+   st = SSL_write( (SSL *) this->SSLStruct, buffer, size );
+   if ( -1 == st ) {
+      perror( "Socket::SSLWrite" );
+      exit( 23 );
+   }
+   return st;
+}

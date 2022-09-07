@@ -10,8 +10,8 @@
 #include <arpa/inet.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-//#include <openssl/ssl.h>
-//#include <openssl/err.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #include <iostream>
 
@@ -19,36 +19,25 @@
 
 class Socket {
  private:
-  int id;
+  int idSocket;
   int port;
   bool ipv6;
   void* SSLStruct;
   void* SSLContext;
+  public:
+    Socket( char, bool = false );
+    Socket( int );
+    ~Socket();
+    void Close();
+    int Connect( const char *, int );
+    void InitSSLContext();
+    void InitSSL();
+    int SSLConnect( char *, int );
+    int SSLConnect( char *, char * );
+    int SSLRead( void *, int );
+    int SSLWrite( void *, int );
   
- public:
-  explicit Socket(char, bool = false);
-  explicit Socket(int);
-  ~Socket();
-  int Connect(const char*, int);
-  int Connect(const char*, const char*);
-  int ConnectIPV6(const char*, int);
-  int ConnectIPV6(const char*, const char*);
-  void Close();
-  int Read(char*, int);
-  int Write(const char*, int);
-  int Write(const char*);
-  int Listen(int);
-  int Bind(int);
-  Socket* Accept();
-  int Shutdown(int);
-  void SetId(int);
-  // SSL Methods
-  void InitSSLContext();
-	void InitSSL();
-	int SSLConnect(const char*, int);
-	int SSLConnect(const char*, char*);
-	int SSLRead(void*, int);
-	int SSLWrite(void*, int);
+
 };
 
 #endif  // !SOCKET_HPP
