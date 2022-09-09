@@ -1,5 +1,5 @@
-#ifndef Socket_h
-#define Socket_h
+#ifndef Socket_hpp
+#define Socket_hpp
 
 class Socket{
 
