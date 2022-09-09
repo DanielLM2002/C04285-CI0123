@@ -24,18 +24,20 @@ class Socket {
   bool ipv6;
   void* SSLStruct;
   void* SSLContext;
+
+  void InitSSLContext();
   public:
     Socket( char, bool = false );
     Socket( int );
     ~Socket();
     void Close();
-    int Connect( const char *, int );
-    void InitSSLContext();
+    int Connect(  char *, int );
+    int Connect(  char *, char * );
     void InitSSL();
-    int SSLConnect( char *, int );
-    int SSLConnect( char *, char * );
+    void SSLConnect( char *, int );
+    void SSLConnect( char *, char * );
     int SSLRead( void *, int );
-    int SSLWrite( void *, int );
+    int SSLWrite( const void *, int );
   
 
 };
