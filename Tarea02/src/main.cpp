@@ -23,7 +23,7 @@ int main( int argc, char * argv[] ) {
 
    memset( a, 0, SIZE );
    s.InitSSL();
-   s.SSLConnect( WM, 80);
+   s.SSLConnect( WM, 433);
    s.SSLWrite(  (void *) reqOS, strlen( reqOS ) );
    while (  (count = s.SSLRead( a, SIZE )) > 0 ) {
       printf( "%s\n", a );
