@@ -35,6 +35,7 @@ class Socket {
   int Write(char*);
   int Listen(int);
   int Bind(int);
+  Socket * Accept();
   void Close();
   void InitSSL();
   void InitSSLContext();

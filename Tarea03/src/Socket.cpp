@@ -19,6 +19,14 @@ Socket::Socket(char type, bool ipv6) {
                            : socket(AF_INET6, SOCK_DGRAM, 0);
 }
 
+
+Socket::Socket(int id) {
+  this->id = id;
+  this->port = DEFAULT_PORT;
+  this->ipv6 = false;
+  this->SSLStruct = nullptr;
+  this->SSLContext = nullptr;
+}
 /**
  * @brief Socket destroyer
  */
@@ -81,6 +89,78 @@ void Socket::Close() {
   close(this->id);
 }
 
+int Socket::Read(char* buffer, int size) {
+  int st = read(this->id, buffer, size);
+  if (st == -1) {
+    perror("Socket::Read");
+    exit(2);
+  }
+  return st;
+}
+
+int Socket::Write(char* buffer, int size) {
+  int st = write(this->id, buffer, size);
+  if (st == -1) {
+    perror("Socket::Write");
+    exit(2);
+  }
+  return st;
+}
+
+int Socket::Write(char* buffer) {
+  int st = write(this->id, buffer, strlen(buffer));
+  if (st == -1) {
+    perror("Socket::Write");
+    exit(2);
+  }
+  return st;
+}
+
+int Socket::Listen(int port) {
+  struct sockaddr_in host4;
+  memset(reinterpret_cast<char*>(&host4), 0, sizeof(host4));
+  host4.sin_family = AF_INET;
+  host4.sin_addr.s_addr = INADDR_ANY;
+  host4.sin_port = htons(port);
+  int st = bind(this->id, reinterpret_cast<sockaddr*>(&host4),
+           sizeof(host4));
+  if (st == -1) {
+    perror("Socket::Listen");
+    exit(2);
+  }
+  st = listen(this->id, 5);
+  if (st == -1) {
+    perror("Socket::Listen");
+    exit(2);
+  }
+  return st;
+}
+
+int Socket::Bind(int port) {
+  struct sockaddr_in host4;
+  memset(reinterpret_cast<char*>(&host4), 0, sizeof(host4));
+  host4.sin_family = AF_INET;
+  host4.sin_addr.s_addr = INADDR_ANY;
+  host4.sin_port = htons(port);
+  int st = bind(this->id, reinterpret_cast<sockaddr*>(&host4),
+           sizeof(host4));
+  if (st == -1) {
+    perror("Socket::Bind");
+    exit(2);
+  }
+  return st;
+}
+
+Socket* Socket::Accept() {
+  struct sockaddr_in host4;
+  socklen_t len = sizeof(host4);
+  int st = accept(this->id, reinterpret_cast<sockaddr*>(&host4), &len);
+  if (st == -1) {
+    perror("Socket::Accept");
+    exit(2);
+  }
+  return new Socket(st);
+}
 /**
  * @brief 
  */
