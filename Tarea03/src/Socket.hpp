@@ -26,6 +26,7 @@ class Socket {
  
  public:
   explicit Socket(char, bool);
+  Socket(int);
   ~Socket();
   int Connect(const char*, int);
   int Connect(const char*, const char*);
