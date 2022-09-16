@@ -30,6 +30,11 @@ class Socket {
   ~Socket();
   int Connect(const char*, int);
   int Connect(const char*, const char*);
+  int Read(char*, int);
+  int Write(char*, int);
+  int Write(char*);
+  int Listen(int);
+  int Bind(int);
   void Close();
   void InitSSL();
   void InitSSLContext();
