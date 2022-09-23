@@ -6,7 +6,7 @@
 
 
 int main( int argc, char ** argv ) {
-   Socket s;     // Crea un socket de IPv4, tipo "stream"
+   Socket s('s');     // Crea un socket de IPv4, tipo "stream"
    char buffer[ 512 ];
 
    s.Connect( "ip address in dot decimal format", 9876 ); // Same port as server
