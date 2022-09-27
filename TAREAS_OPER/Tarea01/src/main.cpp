@@ -24,7 +24,7 @@
 
 int participantes = 10;		// Valor predefinido para la cantidad de participantes
 
-struct msgbuf {			// Estructura ejemplo para el intercambio de mensajes
+struct msgbuf1 {			// Estructura ejemplo para el intercambio de mensajes
    long mtype;
    int papa;
    int participantes;
@@ -63,7 +63,7 @@ int persona( int buzon, int id ) {
 
 int main( int argc, char ** argv ) {
    int buzon, id, i, j, st;
-   struct msgbuf m;
+   struct msgbuf1 m;
 
    if ( argc > 1 ) {
       participantes = atoi( argv[ 1 ] );
