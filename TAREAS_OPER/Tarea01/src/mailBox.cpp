@@ -1,12 +1,3 @@
-/**
-  *
-  *
-  *  CI0122 Sistemas Operativos
-  *  2022-ii
-  *
-  *  Implantación de la clase para intercambio de mensajes por medio de buzones en Unix
-  *
- **/
 
 #include <stdio.h>	// perror function
 #include <stdlib.h>	// exit function

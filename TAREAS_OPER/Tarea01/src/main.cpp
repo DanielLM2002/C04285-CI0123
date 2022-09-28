@@ -1,13 +1,3 @@
-/**
- *  CI0122 Sistemas Operativos
- *  Grupo 2, 2022-ii
- *
- *  Problema de la "papa caliente"
- *
- *  Se crea una ronda de n procesos (fork) que se intercambian mensajes por medio de buzones
- *
- **/
-
 #include <stdio.h>	// printf function
 #include <unistd.h>	// _exit function
 #include <sys/wait.h>	// wait function

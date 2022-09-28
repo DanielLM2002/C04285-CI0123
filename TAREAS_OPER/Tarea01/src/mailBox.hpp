@@ -1,14 +1,5 @@
 #ifndef MAILBOX_H
 
-/**
-  *
-  *   CI0122 Sistemas Operativos
-  *   2022-ii
-  *
-  *  C++ class to encapsulate Unix message passing intrinsic structures and system calls
-  *
-*/
-
 class Buzon {
    public:
       Buzon();
