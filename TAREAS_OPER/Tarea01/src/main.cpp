@@ -11,10 +11,11 @@
 #include <signal.h>	// signal function
 #include <sys/shm.h>	// shmget, shmctl, shmat, shmdt
 #include <sys/sem.h>	// semget, semctl, semop
+#include "mailBox.hpp"
 
 int participantes = 10;		// Valor predefinido para la cantidad de participantes
 
-struct msgbuf1 {			// Estructura ejemplo para el intercambio de mensajes
+struct msgbuf {			// Estructura ejemplo para el intercambio de mensajes
    long mtype;
    int papa;
    int participantes;
@@ -45,15 +46,37 @@ int cambiarPapa( int papa ) {
  *   Recibe la identificación del buzón y la identificación de la persona
  *
  **/
-int persona( int buzon, int id ) {
-
-   _exit( 0 );	// Everything OK
+int persona( Buzon& buzon, int id ) {
+   struct msgbuf msg;
+   msg.papa = 0;
+   bool out = false;
+   while (msg.papa != -1) {
+      buzon.Recibir(&msg, id);
+      if (!out){
+         if (msg.participantes > 1){
+            printf("Soy la persona %d y tengo la papa %d\n", id, msg.papa);
+            msg.papa = cambiarPapa(msg.papa);
+            printf("Soy la persona %d y ahora tengo la papa %d\n", id, msg.papa);
+            msg.participantes--;
+            buzon.Enviar(&msg, msg.participantes);
+         } else {
+            printf("Soy la persona %d y tengo la papa %d\n", id, msg.papa);
+            msg.papa = cambiarPapa(msg.papa);
+            printf("Soy la persona %d y ahora tengo la papa %d\n", id, msg.papa);
+            printf("Soy la persona %d y exploté la papa\n", id);
+            msg.papa = -1;
+            buzon.Enviar(&msg, 1);
+            out = true;
+         }
+      }
+   }
 
 }
 
 int main( int argc, char ** argv ) {
-   int buzon, id, i, j, st;
-   struct msgbuf1 m;
+   int id, i, j, st;
+   Buzon buzon;
+   struct msgbuf m;
 
    if ( argc > 1 ) {
       participantes = atoi( argv[ 1 ] );
@@ -67,7 +90,7 @@ int main( int argc, char ** argv ) {
    printf( "Creando una ronda de %d participantes\n", participantes );
    for ( i = 1; i <= participantes; i++ ) {
       if ( ! fork() ) {
-         persona( buzon, i * 10 );	// Este proceso simula una persona participante
+         persona(buzon, i * 10);	// Este proceso simula una persona participante
       }
    }
 
