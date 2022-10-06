@@ -11,7 +11,10 @@
 #include <signal.h>	// signal function
 #include <sys/shm.h>	// shmget, shmctl, shmat, shmdt
 #include <sys/sem.h>	// semget, semctl, semop
+#include <iostream>	// cout, endl
 #include "buzon.hpp"
+
+using namespace std;
 	// Valor predefinido para la cantidad de participantes
 
 struct msgbuf1 {			// Estructura ejemplo para el intercambio de mensajes
@@ -55,7 +58,7 @@ int persona( Buzon& buzon, int id, int juego ) {
       if (control == false) {
          if (msg.participantes <= 1) {
             msg.papa = -1;
-            std::cout << "El participante " << id << " ha ganado la ronda" << std::endl;
+            cout << "El participante " << id << " ha ganado la ronda" << std::endl;
          } else {
             if (msg.papa <= -1) {
                control = true;
