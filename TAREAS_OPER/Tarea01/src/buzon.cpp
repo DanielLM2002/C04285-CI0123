@@ -67,6 +67,6 @@ int Buzon::recibir(void* mensaje, int len, long mid) {
         exit(1);
     }
     resultadoProceso = msgrcv(this->id, &msg,len, mid, 0);
-    strncpy((char*)mensaje, msg.mtext, len);
+    strncpy((char*)mensaje, msg.mtext, NULL);
     return resultadoProceso;
 }

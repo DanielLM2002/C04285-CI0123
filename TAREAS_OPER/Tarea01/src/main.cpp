@@ -12,15 +12,14 @@
 #include <sys/shm.h>	// shmget, shmctl, shmat, shmdt
 #include <sys/sem.h>	// semget, semctl, semop
 #include "buzon.hpp"
-
-int participantes = 10;		// Valor predefinido para la cantidad de participantes
+	// Valor predefinido para la cantidad de participantes
 
 struct msgbuf1 {			// Estructura ejemplo para el intercambio de mensajes
    long mtype;
    int papa;
    int participantes;
 };
- 
+int participantes = 10;	 
 
 /**
   *  Aplica las reglas de Collatz al valor de la papa
