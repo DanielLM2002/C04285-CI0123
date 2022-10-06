@@ -19,9 +19,13 @@
  **/
 Buzon::Buzon()
 {
-     // Crear el Buzón con msgget
-    this->id = msgget(KEY2, 0666 | IPC_CREAT);
-   
+    // Crear el Buzón con msgget
+    int resultadoProceso = -1;
+    this->id = msgget(IPC_PRIVATE, 0600 | IPC_CREAT);
+    if (this->id == 1) {
+        perror("Buzon");
+        exit(1);
+    }
 }
 
 
@@ -31,36 +35,38 @@ Buzon::Buzon()
   *  (msgctl system call)
   *
  **/
-Buzon::~Buzon()
-{
-    struct msqid_ds str;
-    // Eliminar el buzón con msgctl
-    	if (msgctl(id, IPC_RMID, &str) == -1) {
-		fprintf(stderr, "No se puede eliminar el Buzon.\n");
-		exit(EXIT_FAILURE);
-	}
-    (void)str;
+Buzon::~Buzon() {
+    int resultadoProceso = -1;
+    if (resultadoProceso == -1) {
+        perror("~Buzon");
+        exit(1);
+    }
 }
 
 
 
-void Buzon::enviar(void* mensaje, long mid)
-{
-    // Inicializar el contenido del mensaje con msgbuf
-    message.mesg_type = mid;
-	strcpy(message.mesg_text, (char*)mensaje);
-    // Enviar el mensaje con msgsnd
-    msgsnd(this->id, &message, sizeof(message.mesg_text), 0);
+int Buzon::enviar(void* mensaje,int len, long mid) {
+    int resultadoProceso = -1;
+    struct msgbuf msg;
+    msg.mtype = mid;
+    strncpy(msg.mtext, (const char*)mensaje, len);
+    msgsnd(this->id, &msg, sizeof(msg.mtext), 0);
+    if (resultadoProceso == -1) {
+        perror("Send");
+        exit(1);
+    }
+    return resultadoProceso;
 }
 
 // Método encargado de recibir un mensaje.
-void Buzon::recibir(void* mensaje, int len, long mid)
-{
-    // Inicializar el contenido del mensaje con msgbuf
-    /// message.mesg_type = mid;
-
-    // Recibir el mensaje con msgrcv
-    msgrcv(this->id, &message, len, mid, 0);
-    // Sacar el mensaje del buzón. Sugerencia: strcpy
-    strcpy((char*)mensaje,message.mesg_text);
+int Buzon::recibir(void* mensaje, int len, long mid) {
+    int resultadoProceso = -1;
+    struct msgbuf msg;
+    if (resultadoProceso == -1) {
+        perror("Recibir");
+        exit(1);
+    }
+    resultadoProceso = msgrcv(this->id, &msg,len, mid, 0);
+    strncpy((char*)mensaje, msg.mtext, len);
+    return resultadoProceso;
 }
