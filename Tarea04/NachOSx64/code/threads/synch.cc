@@ -134,12 +134,12 @@ Lock::~Lock() {
 
 
 void Lock::Acquire() {
-    
+    this -> sem_lock -> P();
 }
 
 
 void Lock::Release() {
-
+    this -> sem_lock -> V();
 }
 
 
