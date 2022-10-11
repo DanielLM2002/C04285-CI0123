@@ -123,17 +123,18 @@ Semaphore::Destroy()
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
 Lock::Lock(const char* debugName) {
-
+    this -> name = (char *)debugName;
+    sem_lock = new Semaphore(debugName, 1);
 }
 
 
 Lock::~Lock() {
-
+    delete sem_lock;
 }
 
 
 void Lock::Acquire() {
-
+    
 }
 
 
