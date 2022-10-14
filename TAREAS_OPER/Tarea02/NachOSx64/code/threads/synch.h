@@ -167,6 +167,12 @@ class Barrier {
       void Wait();
    private:
       char * name;
+      Semaphore* sem_lock;
+      Thread* lockOwner;
+      int barrierCount;
+      int barrierCountCurrent;
+  
+
       // plus some other stuff you'll need to define
 };
 
