@@ -73,6 +73,7 @@ class Lock {
 
     void Acquire(); // these are the only operations on a lock
     void Release(); // they are both *atomic*
+    Thread* getOwner();
 
     bool isHeldByCurrentThread();	// true if the current thread
 					// holds this lock.  Useful for
@@ -82,6 +83,7 @@ class Lock {
   private:
     char* name;				// for debugging
     Semaphore* sem_lock;
+    Thread* lockOwner;
     // plus some other stuff you'll need to define
 };
 
@@ -134,6 +136,8 @@ class Condition {
 
   private:
     char* name;
+    List<Thread*> *queue;
+    Lock* lock;
     // plus some other stuff you'll need to define
 };
 
