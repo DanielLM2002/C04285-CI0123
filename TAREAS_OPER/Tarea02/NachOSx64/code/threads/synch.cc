@@ -245,12 +245,34 @@ void Mutex::Unlock() {
 
 // Barrier class
 Barrier::Barrier( const char * debugName, int count ) {
+    name = (char *)debugName;
+    sem_lock = new Semaphore(debugName, 1);
+    lockOwner = NULL;
+    barrierCount = count;
+    barrierCountCurrent = 0;
 
 }
 
 Barrier::~Barrier() {
+    delete sem_lock;
 }
 
 void Barrier::Wait() {
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    DEBUG('t', "Lock %s is acquired by thread %s", currentThread->getName());
+    sem_lock -> P();
+    lockOwner = currentThread;
+    barrierCountCurrent++;
+    if (barrierCountCurrent == barrierCount) {
+        sem_lock -> V();
+        lockOwner = NULL;
+        barrierCountCurrent = 0;
+    }
+    else {
+        sem_lock -> V();
+        lockOwner = NULL;
+        currentThread -> Sleep();
+    }
+    (void) interrupt -> SetLevel(oldLevel);
 }
 
