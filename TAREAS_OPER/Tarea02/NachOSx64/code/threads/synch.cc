@@ -147,8 +147,10 @@ void Lock::Acquire() {
 void Lock::Release() {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
     DEBUG('t', "Lock %s is released by thread %s", currentThread->getName());
-    sem_lock -> V();
-    lockOwner = NULL;
+    if(isHeldByCurrentThread()) { 
+        sem_lock -> V();
+        lockOwner = NULL;
+    }
     (void) interrupt -> SetLevel(oldLevel);
 }
 
@@ -216,24 +218,34 @@ void Condition::Broadcast( Lock * conditionLock ) {
 
 // Mutex class
 Mutex::Mutex( const char * debugName ) {
-
+    name = (char *)debugName;
+    sem_lock = new Semaphore(debugName, 1);
+    lockOwner = NULL;
 }
 
 Mutex::~Mutex() {
-
+    delete sem_lock;
 }
 
 void Mutex::Lock() {
-
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    DEBUG('t', "Lock %s is acquired by thread %s", currentThread->getName());
+    sem_lock -> P();
+    lockOwner = currentThread;
 }
 
 void Mutex::Unlock() {
-
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+    DEBUG('t', "Lock %s is released by thread %s", currentThread->getName());
+    sem_lock -> V();
+    lockOwner = NULL;
+    (void) interrupt -> SetLevel(oldLevel);
 }
 
 
 // Barrier class
 Barrier::Barrier( const char * debugName, int count ) {
+
 }
 
 Barrier::~Barrier() {

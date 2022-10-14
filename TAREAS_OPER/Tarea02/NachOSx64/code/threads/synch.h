@@ -152,6 +152,8 @@ class Mutex {
       void Unlock();
    private:
       char * name;
+      Semaphore * sem_lock;
+      Thread* lockOwner;
       // plus some other stuff you'll need to define
 };
 

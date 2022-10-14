@@ -23,13 +23,15 @@ void Philo( void * p ) {
     long who = (long) p;
 
     currentThread->Yield();
+    Lock lock_con("sem_con");
 
     for ( int i = 0; i < 10; i++ ) {
-
-        printf(" Philosopher %ld will try to pickup sticks\n", who + 1);
-
+        lock_con.Acquire();
+            printf("Round %d philo # %ld\n", i, who + 1);
+            dp->print();
+            printf(" Philosopher %ld will try to pickup sticks\n", who + 1);
+        lock_con.Release();
         dp->pickup( who );
-        dp->print();
         eats = Random() % 6;
 
         currentThread->Yield();
@@ -90,8 +92,8 @@ ThreadTest()
 
     DEBUG('t', "Entering SimpleTest");
 
-/*
-    dp = new DinningPh();
+
+    dp = new DiningPh();
 
     for ( long k = 0; k < 5; k++ ) {
         Ph = new Thread( "dp" );
@@ -99,14 +101,14 @@ ThreadTest()
     }
 
     return;
-*/
+/*
     for ( int k=1; k<5; k++) {
       char* threadname = new char[100];
       sprintf(threadname, "Hilo %d", k);
       Thread* newThread = new Thread (threadname);
       newThread->Fork (SimpleThread, (void*)threadname);
     }
-    
+*/
     SimpleThread( (void*)"Hilo 0");
 }
 
