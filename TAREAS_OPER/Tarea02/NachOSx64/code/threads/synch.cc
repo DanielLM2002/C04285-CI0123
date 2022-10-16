@@ -33,8 +33,7 @@
 //	"initialValue" is the initial value of the semaphore.
 //----------------------------------------------------------------------
 
-Semaphore::Semaphore(const char* debugName, int initialValue)
-{
+Semaphore::Semaphore(const char* debugName, int initialValue) {
     name = (char *)debugName;
     value = initialValue;
     queue = new List<Thread*>;
@@ -46,8 +45,7 @@ Semaphore::Semaphore(const char* debugName, int initialValue)
 //	is still waiting on the semaphore!
 //----------------------------------------------------------------------
 
-Semaphore::~Semaphore()
-{
+Semaphore::~Semaphore() {
     delete queue;
 }
 
@@ -62,8 +60,7 @@ Semaphore::~Semaphore()
 //----------------------------------------------------------------------
 
 void
-Semaphore::P()
-{
+Semaphore::P() {
     IntStatus oldLevel = interrupt->SetLevel(IntOff);	// disable interrupts
     
     while (value == 0) { 			// semaphore not available
@@ -85,8 +82,7 @@ Semaphore::P()
 //----------------------------------------------------------------------
 
 void
-Semaphore::V()
-{
+Semaphore::V() {
     Thread *thread;
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
