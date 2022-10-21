@@ -7,6 +7,8 @@ public:
     ~Santa();
     void iniciarTrabajo( long who );
     void terminarTrabajo( long who );
+    bool estaTrabajando();
+    void iniciarTaller(); 
     void despertar();
     void print();
 
@@ -14,6 +16,6 @@ private:
     void test( long who );
     enum { Sleeping, Working, Waiting } state[ 4 ];
     Lock * sc;			// Locks for each method in class
-    Condition * self[ 5 ];
+    Condition * self[ 4 ];
 
 };
