@@ -13,35 +13,34 @@
 #include <unistd.h>
 #include "copyright.h"
 #include "system.h"
-#include "diningph.h"
+#include "santa.cc"
+#include "string.h"
 
-DiningPh * dp;
+//DiningPh * dp;
+Santa * santa;
 
-void Philo( void * p ) {
 
-    int eats, thinks;
-    long who = (long) p;
+void santaTrabajo(void *p) {
+    int taller = 0;
+    int trabajo, standBy;
+    long id = (long) p;
 
+    std::vector<char> nombres = {'G','M','T','J'};
     currentThread->Yield();
-    Lock lock_con("sem_con");
-
-    for ( int i = 0; i < 10; i++ ) {
-        lock_con.Acquire();
-            printf("Round %d philo # %ld\n", i, who + 1);
-            dp->print();
-            printf(" Philosopher %ld will try to pickup sticks\n", who + 1);
-        lock_con.Release();
-        dp->pickup( who );
-        eats = Random() % 6;
-
+    Lock lock("sem_con");
+    for (int i = 0; i < 10; i++)  {
+        lock.Acquire();
+            printf("Round %d elf # %ld\n", i, id + 1);
+            printf("El duende %ld quiere trabajar \n", id + 1);
+        lock.Release();
+        taller = santa->iniciarTrabajo(id);
+        trabajo = Random() % 6;
         currentThread->Yield();
-        sleep( eats );
-
-        dp->putdown( who );
-
-        thinks = Random() % 6;
+        sleep(trabajo);
+        santa->terminarTrabajo(id, taller);
+        standBy = Random() % 6;
         currentThread->Yield();
-        sleep( thinks );
+        sleep(standBy);
     }
 
 }
@@ -88,16 +87,18 @@ SimpleThread(void* name)
 void
 ThreadTest()
 {
-    Thread * Ph;
+    Thread * threadDuendes;
+    std::cout<<"inicidano en el threadtest"<<std::endl;
+    std::cout<< " "<< std::endl;
 
     DEBUG('t', "Entering SimpleTest");
 
 
-    dp = new DiningPh();
+    santa = new Santa();
 
     for ( long k = 0; k < 4; k++ ) {
-        Ph = new Thread( "dp" );
-        Ph->Fork( Philo, (void *) k );
+        threadDuendes = new Thread( "santa" );
+        threadDuendes->Fork( santaTrabajo, (void *) k );
     }
 
     return;
