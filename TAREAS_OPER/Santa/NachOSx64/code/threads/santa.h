@@ -14,7 +14,7 @@ public:
     void casoTimido();
     void casoJerry();
     void casoTom();
-    bool tallerLleno();
+    bool tallerLleno(int taller);
 private:
     enum {Durmiendo, Esperando, Trabajando} estadoDuende[4];
     enum {Disponible, Ocupado} estadoTaller[2];
