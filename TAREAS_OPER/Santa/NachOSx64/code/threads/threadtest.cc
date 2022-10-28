@@ -95,7 +95,7 @@ ThreadTest()
 
     dp = new DiningPh();
 
-    for ( long k = 0; k < 5; k++ ) {
+    for ( long k = 0; k < 4; k++ ) {
         Ph = new Thread( "dp" );
         Ph->Fork( Philo, (void *) k );
     }
