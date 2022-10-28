@@ -1,29 +1,39 @@
 #include "synch.h"
-#include <algorithm>
 #include <list>
-#include <iterator>
+#include <vector>
 #include <iostream>
+#include <iterator>
+#include <algorithm>
+
 class Santa {
-public:
-    std::list<char> tallerL;
-    std::list<char> tallerH;
-    std::list<char> sinAsignar;
-    Santa();
-    ~Santa();
-    int inciarTrabajo(int duende );
-    void terminarTrabajo(int duende, int taller);
-    void print();
-    void casoGrunon();
-    void casoTimido();
-    void casoJerry();
-    void casoTom();
-    bool tallerLleno(int taller);
-    bool duendeTrabajando(int duende);
-private:
-    enum {Durmiendo, Esperando, Trabajando} estadoDuende[4];
-    enum {Disponible, Ocupado} estadoTaller[2];
-    Lock * dp;
-    Condition * duendes[5];
-    int taller[4];
-    int duendesEnTaller;
+ private:
+  std::vector<char> nombres;
+  std::list<char> taller1;
+  std::list<char> taller2;
+  std::list<int> duendesDisponibles;
+  Lock* sc;
+  Condition* elfs[5];
+  
+  enum { Sleeping, standBy, working } elfState[4];
+
+ public:
+  Santa();
+  ~Santa();
+  int iniciarTrabajo(int);
+  void terminarTrabajo(int, int);
+  void print();
+  bool tallerDisponible(int);
+  bool elfoDisponible(int);
+  void stateDeTaller(int, bool);
+  bool revisarDuende(char, int);
+  void eliminarDuende(int, int);
+  int buscarTaller(int);
+
+ private:
+  int casoNormal(char); 
+  int casoSolitario();
+  int casoTimido();
+  int casoJerry();
+  int casoTom();
+  int casoEspecial();
 };

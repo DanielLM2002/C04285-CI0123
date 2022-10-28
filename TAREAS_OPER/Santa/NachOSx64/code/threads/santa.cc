@@ -1,331 +1,238 @@
+#include "system.h"
 #include "santa.h"
-/*
+
 Santa::Santa() {
-    dp = new Lock("dp");
-    duendes = new Condition("duendes");
-    duendesEnTaller = 0;
-    for (int i = 0; i < 4; i++) {
-        estadoDuende[i] = Durmiendo;
-        taller[i] = -1;
-    }
-    for (int i = 0; i < 2; i++) {
-        estadoTaller[i] = Disponible;
-    }
-}
-Santa::~Santa() {
-    delete dp;
-    delete duendes;
+  sc = new Lock("santa");
+  nombres.reserve(4);
+  for (int i = 0; i < 4; i++) {
+    elfs[i] = new Condition("elves");
+    elfState[i] = Sleeping;
+  }
+  nombres.push_back('Grunon');
+  nombres.push_back('Timido');
+  nombres.push_back('Tom');
+  nombres.push_back('Jerry');
 }
 
-int Santa::inciarTrabajo(int duende) {
-    dp->Acquire();
-    estadoDuende[duende] = Esperando;
-    sinAsignar.push_back(duende);
-    if (sinAsignar.size() == 4) {
-        casoGrunon();
-    } else if (sinAsignar.size() == 3) {
-        casoTimido();
-    } else if (sinAsignar.size() == 2) {
-        casoJerry();
-    } else if (sinAsignar.size() == 1) {
-        casoTom();
+Santa::~Santa() {
+    delete sc;
+    for (int i = 0; i < 4; i++) {
+        delete elfs[i];
     }
-    dp->Release();
-    return 0;
 }
-void Santa::terminarTrabajo(int duende, int taller) {
-    dp->Acquire();
-    estadoDuende[duende] = Durmiendo;
-    estadoTaller[taller] = Disponible;
-    tallerL.push_back(duende);
-    tallerH.push_back(taller);
-    duendesEnTaller--;
-    if (duendesEnTaller == 0) {
-        duendes->Broadcast(dp);
+
+int Santa::iniciarTrabajo(int elves) {
+  int taller = -1;
+  sc->Acquire();
+  elfState[elves] = standBy;
+  taller = casoNormal(nombres[elves]);
+  if (elfState[elves] == standBy) {
+    duendesDisponibles.push_back(elves);
+    printf("El duende %ld esta esperando para poder trabajar en el taller \n", elves + 1);
+    elfs[elves]->Wait(sc);
+  }
+  sc->Release();
+  return taller;
+}
+
+void Santa::terminarTrabajo(int elves, int taller) {
+  sc->Acquire();
+  printf("el Duende %ld se fue a dormir \n", elves + 1);
+  elfState[elves] = Sleeping;
+  if (taller == 0) {
+    taller1.remove(elves+1);
+  } else { 
+    taller2.remove(elves+1);
+  }      
+  for (std::list<int>::iterator it=duendesDisponibles.begin() ; it != duendesDisponibles.end(); ++it) {
+    printf("revisando estado de duendes %ld que puedan trabajar \n", *it + 1);
+    size_t size = duendesDisponibles.size();
+    taller = casoNormal(nombres[*it]);
+    if (size != duendesDisponibles.size()) {
+      it = duendesDisponibles.begin();
     }
-    dp->Release();
+  }
+  sc->Release();
 }
+
+bool Santa::tallerDisponible(int taller) {
+  if (taller == 0) {
+    return taller1.size() < 3;
+  } else {
+    return taller2.size() < 3;
+  }
+}
+
+void Santa::eliminarDuende(int elf, int taller) {
+  if (taller == 0) {
+    taller1.remove(elf);
+  } else {
+    taller2.remove(elf);
+  }
+}
+
+void Santa::stateDeTaller(int taller, bool state) {
+  if (taller == 0) {
+    taller1.clear();
+  } else {
+    taller2.clear();
+  }
+}
+
+int Santa::casoNormal(char elves) {
+  int taller = -1;
+  if (elves == 'Grunon') {
+    taller = casoSolitario();
+  } else if (elves == 'Timido') {
+    taller = casoTimido();
+  } else if (elves == 'Tom') {
+    taller = casoJerry();
+  } else if (elves == 'Jerry') {
+    taller = casoTom();
+  }
+  return taller;
+}
+
+
+int Santa::casoSolitario() {
+  int taller = -1;
+  if(this->taller1.empty()) {
+    taller1.push_back(1);
+    elfState[0] = working;
+    duendesDisponibles.remove(0);
+    taller = 0;
+    elfs[0]->Signal(sc);
+  } else if (this->taller2.empty()) {
+    taller2.push_back(1);
+    elfState[0] = working;
+    duendesDisponibles.remove(0);
+    taller = 1;
+    elfs[0]->Signal(sc);
+  }
+  return taller;
+}
+
+int Santa::casoTimido() {
+  int taller = -1;
+  if (taller1.size() == 1 && *taller1.begin() != 1){
+    taller1.push_back(2);
+    elfState[1] = working;
+    duendesDisponibles.remove(1);
+    taller = 0;
+    elfs[1]->Signal(sc);
+  } else if (taller2.size() == 1 && *taller2.begin() != 1) {
+    taller2.push_back(2);
+    elfState[1] = working;
+    duendesDisponibles.remove(1);
+    taller = 1;
+    elfs[1]->Signal(sc);
+  }
+  return taller;
+}
+
+int Santa::casoTom() {
+  int taller = -1;
+  if (taller1.size() <= 1 && *taller1.begin() != 1 && *taller1.begin() != 3) {
+    taller1.push_back(4);
+    elfState[3] = working;
+    duendesDisponibles.remove(3);
+    taller = 0;
+    elfs[3]->Signal(sc);
+  } else if (taller2.size() <= 1 && *taller2.begin() != 1 && *taller2.begin() != 3) {
+    taller2.push_back(4);
+    elfState[3] = working;
+    duendesDisponibles.remove(3);
+    taller = 1;
+    elfs[3]->Signal(sc);
+  }
+  return taller;
+}
+
+int Santa::casoJerry() {
+  int taller = -1;
+  if (taller1.size() <= 1 && *taller1.begin() != 1 && *taller1.begin() != 4) {
+    taller1.push_back(3);
+    elfState[2] = working;
+    duendesDisponibles.remove(2);
+    taller = 0;
+    elfs[2]->Signal(sc);
+  } else if (taller2.size() <= 1 && *taller2.begin() != 1 && *taller2.begin() != 4) {
+    taller2.push_back(3);
+    elfState[2] = working;
+    duendesDisponibles.remove(2);
+    taller = 1;
+    elfs[2]->Signal(sc);
+  }
+  return taller;
+}
+
+int Santa::casoTimido() {
+  int taller = -1;
+  if (taller1.size() == 1 && *taller1.begin() != 1){
+    taller1.push_back(2);
+    elfState[1] = working;
+    duendesDisponibles.remove(1);
+    taller = 0;
+    elfs[1]->Signal(sc);
+  } else if (taller2.size() == 1 && *taller2.begin() != 1) {
+    taller2.push_back(2);
+    elfState[1] = working;
+    duendesDisponibles.remove(1);
+    taller = 1;
+    elfs[1]->Signal(sc);
+  }
+  return taller;
+}
+
+int Santa::casoEspecial() {
+  int taller = -1;
+  if (taller1.size() == 2 && taller2.size() == 2) {
+    taller1.push_back(1);
+    elfState[0] = working;
+    duendesDisponibles.remove(0);
+    taller = 0;
+    elfs[0]->Signal(sc);
+  } else if (taller1.size() == 2 && taller2.size() == 2) {
+    taller2.push_back(1);
+    elfState[0] = working;
+    duendesDisponibles.remove(0);
+    taller = 1;
+    elfs[0]->Signal(sc);
+  }
+  return taller;
+}
+
+
 
 void Santa::print() {
-    printf("Estado de los duendes: ");
-    for (int i = 0; i < 4; i++) {
-        if (estadoDuende[i] == Durmiendo) {
-            printf("D ");
-        } else if (estadoDuende[i] == Esperando) {
-            printf("E ");
-        } else if (estadoDuende[i] == Trabajando) {
-            printf("T ");
-        }
+  char elves;
+  for (int i = 0; i < 4; ++i) {
+    printf( "Duende %c: %s", elves, (elfState[i]==Sleeping) ? "Durmiendo\n" : (elfState[i]==standBy) ? "En espera\n" : "trabajando\n");
+    if (elfState[i] == working) {
+      printf(" en el taller #%d\n", buscarTaller(elves));
     }
-    printf("\n");
-    printf("Estado de los talleres: ");
-    for (int i = 0; i < 2; i++) {
-        if (estadoTaller[i] == Disponible) {
-            printf("D ");
-        } else if (estadoTaller[i] == Ocupado) {
-            printf("O ");
-        }
-    }
-    printf("\n");
-    printf("Duendes en taller: ");
-    for (int i = 0; i < 4; i++) {
-        if (taller[i] != -1) {
-            printf("%d ", taller[i]);
-        }
-    }
-    printf("\n");
-    printf("Duendes en taller L: ");
-    for (std::list<char>::iterator it = tallerL.begin(); it != tallerL.end(); ++it) {
-        printf("%d ", *it);
-    }
-    printf("\n");
-    printf("Duendes en taller H: ");
-    for (std::list<char>::iterator it = tallerH.begin(); it != tallerH.end(); ++it) {
-        printf("%d ", *it);
-    }
-    printf("\n");
-    printf("Duendes sin asignar: ");
-    for (std::list<char>::iterator it = sinAsignar.begin(); it != sinAsignar.end(); ++it) {
-        printf("%d ", *it);
-    }
-    printf("\n");
+  }
 }
 
-void Santa::casoGrunon() {
-    tallerL.push_back(sinAsignar.front());
-    sinAsignar.pop_front();
-    tallerH.push_back(sinAsignar.front());
-    sinAsignar.pop_front();
-    tallerL.push_back(sinAsignar.front());
-    sinAsignar.pop_front();
-    tallerH.push_back(sinAsignar.front());
-    sinAsignar.pop_front();
-    for (int i = 0; i < 4; i++) {
-        if (estadoDuende[i] == Esperando) {
-            estadoDuende[i] = Trabajando;
-            duendes->Signal(dp);
-        }
-    }
+int Santa::buscarTaller(int elves) {
+  int taller = -1;
+  if (std::find(taller1.begin(), taller1.end(), elves) != taller1.end()) {
+    taller = 0;
+  } else if (std::find(taller2.begin(), taller2.end(), elves) != taller2.end()) {
+    taller = 1;
+  }
+  return taller;
 }
 
-void Santa::casoJerry() {
-    if (estadoTaller[0] == Disponible) {
-        tallerL.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[0] = Ocupado;
-    } else if (estadoTaller[1] == Disponible) {
-        tallerH.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[1] = Ocupado;
-    }
-}
 
-void Santa::casoTimido() {
-    if (estadoTaller[0] == Disponible) {
-        tallerL.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[0] = Ocupado;
-    } else if (estadoTaller[1] == Disponible) {
-        tallerH.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[1] = Ocupado;
-    }
-}
 
-void Santa::casoTom() {
-    if (estadoTaller[0] == Disponible) {
-        tallerL.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[0] = Ocupado;
-    } else if (estadoTaller[1] == Disponible) {
-        tallerH.push_back(sinAsignar.front());
-        sinAsignar.pop_front();
-        estadoTaller[1] = Ocupado;
-    }
-}
 
-bool Santa::tallerLleno(int taller) {
-    if (taller == 0) {
-        if (tallerL.size() == 2) {
-            return true;
-        }
-    } else if (taller == 1) {
-        if (tallerH.size() == 2) {
-            return true;
-        }
-    }
-    return false;
-} */
 
-Santa::Santa() {
-    dp = new Lock("dp");
-    for (int i = 0; i < 4; i++) {
-        duendes[i] = new Condition("duende");
-        estadoDuende[i] = Durmiendo;
-    }
-}
 
-Santa::~Santa() {
-    delete dp;
-    for (int i = 0; i < 4; i++) {
-        delete duendes[i];        
-    }
-}
 
-int Santa::inciarTrabajo(int duende) {
-    dp->Acquire();
-    estadoDuende[duende] = Esperando;
-    std::cout<< "El duende " << duende << " esta esperando" << std::endl;
-    if (sinAsignar.size() == 4) {
-        casoGrunon();
-    } else if (sinAsignar.size() == 3) {
-        casoJerry();
-    } else if (sinAsignar.size() == 2) {
-        casoTimido();
-    } else if (sinAsignar.size() == 1) {
-        casoTom();
-    }
-    if (estadoDuende[duende] == Esperando) {
-        duendes[duende]->Wait(dp);
-        std::cout<< "Esperando por espacio de taller" << duende + 1;
-    }
-    dp->Release();
-    return duende;
-}
 
-void Santa::terminarTrabajo(int duende, int taller) {
-    dp->Acquire();
-    if (taller == 0) {
-        tallerL.pop_front();
-    } else if (taller == 1) {
-        tallerH.pop_front();
-    }
-    if (tallerLleno(taller)) {
-        estadoTaller[taller] = Disponible;
-    }
-    if (sinAsignar.size() > 0) {
-        if (taller == 0) {
-            tallerL.push_back(sinAsignar.front());
-            sinAsignar.pop_front();
-        } else if (taller == 1) {
-            tallerH.push_back(sinAsignar.front());
-            sinAsignar.pop_front();
-        }
-    }
-    estadoDuende[duende] = Durmiendo;
-    dp->Release();
-}
 
-bool Santa::tallerLleno(int taller) {
-    if (taller == 0) {
-        if (tallerL.size() == 2) {
-            return true;
-        }
-    } else if (taller == 1) {
-        if (tallerH.size() == 2) {
-            return true;
-        }
-    }
-    return false;
-}
 
-bool Santa::duendeTrabajando(int duende) {
-    if (estadoDuende[duende] == Trabajando) {
-        return true;
-    }
-    return false;
-}
 
-void Santa::casoGrunon() {
-    if (this->tallerL.empty()) {
-        tallerL.push_back(1);
-        estadoDuende[0] = Trabajando;
-        sinAsignar.remove(0);
-        taller[0] = 0;
-        duendes[0]->Signal(dp);
-        std::cout<< "El duende " << 1 << " esta trabajando en el taller de baja tecnologia" << std::endl;
-    } else if (this->tallerH.empty()) {
-        tallerH.push_back(1);
-        estadoDuende[0] = Trabajando;
-        sinAsignar.remove(0);
-        taller[0] = 1;
-        duendes[0]->Signal(dp);
-        std::cout<< "El duende " << 1 << " esta trabajando en el taller de alta tecnologia" << std::endl;
-    }
-}
 
-void Santa::casoTom() {
-    if (tallerL.size() <=1 && *tallerL.begin() != 1) {
-        if (*tallerL.begin() != 3) {
-            tallerL.push_back(2);
-            estadoDuende[1] = Trabajando;
-            sinAsignar.remove(1);
-            taller[1] = 0;
-            duendes[1]->Signal(dp);
-            std::cout<< "El duende " << 2 << " esta trabajando en el taller de baja tecnologia" << std::endl;
-        }
-    } else if (tallerH.size() <=1 && *tallerH.begin() != 1) {
-        if (*tallerH.begin() != 3) {
-            tallerH.push_back(2);
-            estadoDuende[1] = Trabajando;
-            sinAsignar.remove(1);
-            taller[1] = 1;
-            duendes[1]->Signal(dp);
-            std::cout<< "El duende " << 2 << " esta trabajando en el taller de alta tecnologia" << std::endl;
-        }
-    }
-}
-
-void Santa::casoJerry() {
-    if (tallerL.size()<= 1 && *tallerL.begin()!= 1) {
-        if (*tallerL.begin() != 2) {
-            tallerL.push_back(3);
-            estadoDuende[2] = Trabajando;
-            sinAsignar.remove(2);
-            taller[2] = 0;
-            duendes[2]->Signal(dp);
-            std::cout<< "El duende " << 3 << " esta trabajando en el taller de baja tecnologia" << std::endl;
-        }
-    } else if (tallerH.size() <= 1 && *tallerH.begin() != 1) {
-        if (*tallerH.begin() != 2) {
-            tallerH.push_back(3);
-            estadoDuende[2] = Trabajando;
-            sinAsignar.remove(2);
-            taller[2] = 1;
-            duendes[2]->Signal(dp);
-            std::cout<< "El duende " << 3 << " esta trabajando en el taller de alta tecnologia" << std::endl;
-        }
-    }
-}
-
-void Santa::casoTimido() {
-    if (tallerL.size() == 1 && *tallerL.begin() != 1) {
-        tallerL.push_back(4);
-        estadoDuende[3] = Trabajando;
-        sinAsignar.remove(3);
-        taller[3] = 0;
-        duendes[3]->Signal(dp);
-        std::cout<< "El duende " << 4 << " esta trabajando en el taller de baja tecnologia" << std::endl;
-    } else if (tallerH.size() == 1 && *tallerH.begin() != 1) {
-        tallerH.push_back(4);
-        estadoDuende[3] = Trabajando;
-        sinAsignar.remove(3);
-        taller[3] = 1;
-        duendes[3]->Signal(dp);
-        std::cout<< "El duende " << 4 << " esta trabajando en el taller de alta tecnologia" << std::endl;
-    }
-}
-
-void print() {
-    std::cout<< "Taller de baja tecnologia: " << std::endl;
-    for (std::list<int>::iterator it = tallerL.begin(); it != tallerL.end(); ++it) {
-        std::cout<< *it << " ";
-    }
-    std::cout<< std::endl;
-    std::cout<< "Taller de alta tecnologia: " << std::endl;
-    for (std::list<int>::iterator it = tallerH.begin(); it != tallerH.end(); ++it) {
-        std::cout<< *it << " ";
-    }
-    std::cout<< std::endl;
-}
 
