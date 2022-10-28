@@ -112,23 +112,6 @@ int Santa::casoSolitario() {
   return taller;
 }
 
-int Santa::casoTimido() {
-  int taller = -1;
-  if (taller1.size() == 1 && *taller1.begin() != 1){
-    taller1.push_back(2);
-    elfState[1] = working;
-    duendesDisponibles.remove(1);
-    taller = 0;
-    elfs[1]->Signal(sc);
-  } else if (taller2.size() == 1 && *taller2.begin() != 1) {
-    taller2.push_back(2);
-    elfState[1] = working;
-    duendesDisponibles.remove(1);
-    taller = 1;
-    elfs[1]->Signal(sc);
-  }
-  return taller;
-}
 
 int Santa::casoTom() {
   int taller = -1;
@@ -223,16 +206,3 @@ int Santa::buscarTaller(int elves) {
   }
   return taller;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
