@@ -111,18 +111,13 @@ void NachOS_Open()
  */
 void NachOS_Write()
 { // System call 6
-   printf("Write\n");
    int bufferPointer = machine->ReadRegister(4);
    int size = machine->ReadRegister(5);
    int socketId = machine->ReadRegister(6);
    int bytes_read = 0;
-   char char_buffer[size];
+   char * char_buffer = new char[size];
    int counter = 0;
-   int counter_aux = 0;
-   char* aux;
    int container = 0;
-   bool reachEnd = false;
-   int unixHandle = 0;
    syscall_lock.Acquire();
    switch(socketId) {
       case 0:
@@ -130,16 +125,10 @@ void NachOS_Write()
       break;
 
       case 1:
-         while (counter < size && !reachEnd) {
-            unixHandle = currentThread->fileTable->getOpenCount(socketId);
+         while (counter < size) {
             machine->ReadMem(bufferPointer + counter, 1, &bytes_read);
-            if(bytes_read == 0){
-               reachEnd = true;
-            } else{
-               char_buffer[counter] = (char) bytes_read;
-               printf("%c \n", char_buffer[counter]);
-               ++counter;
-            }
+            char_buffer[counter] = (char) bytes_read;
+            counter++;
          }
          printf("%s",char_buffer);
          container = 1;
@@ -150,21 +139,21 @@ void NachOS_Write()
       break;
 
       default:
-         printf("Entre al default\n");
-         //while (counter < size && !reachEnd) {
-         while (machine->ReadMem(bufferPointer + counter, 1, &bytes_read) {
-            //machine->ReadMem(bufferPointer + counter, 1, &bytes_read);
-               char_buffer[counter] = (char) bytes_read;
-               printf("%c \n", char_buffer[counter]);
-               ++counter;
+         if (currentThread->fileTable->isOpen(socketId)) {
+            int openCount = currentThread->fileTable->getOpenCount(socketId);
+            int count = 0;
+            while (count < size) {
+               machine->ReadMem(bufferPointer + count, 1, &bytes_read);
+               char_buffer[count] = (char) bytes_read;
+               count++;
+            }
+            container = write(openCount, char_buffer, size);
+         } else {
+            container = -1;
          }
-         char_buffer[counter] = 0;
-         printf("%s",char_buffer);
-         write(unixHandle, char_buffer, size);
-         container = 1;
       break;
    }
-   //delete char_buffer;
+   delete char_buffer;
    syscall_lock.Release();
    machine->WriteRegister(2, container);
 }
@@ -388,7 +377,6 @@ void NachOS_Socket(){ // System call 30
       exit(2);
    } else {
       new_id = currentThread->fileTable->Open(id);
-      printf("Socket creado con id: %d", new_id);
    }
    machine->WriteRegister(2, new_id);
 }
