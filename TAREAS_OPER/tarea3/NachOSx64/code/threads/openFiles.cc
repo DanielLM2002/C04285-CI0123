@@ -4,6 +4,9 @@
 OpenFiles::OpenFiles() {
     openFileCount = new int[amount_of_files];
     openFilesMap = new BitMap(amount_of_files);
+    this->openFilesMap->Mark(0);
+    this->openFilesMap->Mark(1);
+    this->openFilesMap->Mark(2);
     ThreadsInUse = 0;
 }
 
@@ -21,17 +24,10 @@ void OpenFiles::removeThread() {
 }
 
 int OpenFiles::Open(int fileHandle) {
-    if (this->ThreadsInUse == 0) {
-        return -1;
-    }
-    if (this->openFilesMap->Test(fileHandle)) {
-        this->openFileCount[fileHandle]++;
-        return 0;
-    } else {
-        this->openFilesMap->Mark(fileHandle);
-        this->openFileCount[fileHandle] = 1;
-        return 0;
-    }
+        int nachOSHandle = this->openFilesMap->Find();
+        printf("nachOSHandle: %d\n", nachOSHandle);
+        this->openFileCount[nachOSHandle] = fileHandle;
+        return nachOSHandle;
 }
 
 int OpenFiles::Close(int fileHandle) {
