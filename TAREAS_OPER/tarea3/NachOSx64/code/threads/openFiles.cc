@@ -4,10 +4,8 @@
 OpenFiles::OpenFiles() {
     openFileCount = new int[amount_of_files];
     openFilesMap = new BitMap(amount_of_files);
-    this->openFilesMap->Mark(0);
-    this->openFilesMap->Mark(1);
-    this->openFilesMap->Mark(2);
     ThreadsInUse = 0;
+    SetMemory();
 }
 
 OpenFiles::~OpenFiles() {
@@ -24,10 +22,27 @@ void OpenFiles::removeThread() {
 }
 
 int OpenFiles::Open(int fileHandle) {
-        int nachOSHandle = this->openFilesMap->Find();
-        printf("nachOSHandle: %d\n", nachOSHandle);
-        this->openFileCount[nachOSHandle] = fileHandle;
-        return nachOSHandle;
+    int fileMemory = 0;
+    addThread();
+    int result =0;
+    if (this->ThreadsInUse == 0) {
+        this ->openFilesMap -> Mark(fileMemory);
+        this ->openFileCount[fileMemory] = 1;
+        printf("There is no space for a new file. Please close a file first.");
+    } else if (this->ThreadsInUse >= 1) {
+        if (this ->openFilesMap->Test(fileHandle)) {
+            fileMemory = this->openFilesMap->Find();
+            openFileCount[fileMemory] = fileHandle;
+            result = fileMemory;
+        } else {
+            printf("File is already open");
+            result = 1;
+        }
+    } else {
+        printf("ERROR, there are no threads to work with");
+        result = -1;
+    }
+    return result;
 }
 
 int OpenFiles::Close(int fileHandle) {
@@ -57,9 +72,18 @@ int OpenFiles::getOpenCount(int fileHandle) {
 }
 
 void OpenFiles::Print() {
-    std::cout << "OpenFiles:" << std::endl;
-    for(int i = 0; i < amount_of_files; i++) {
-        std::cout << "Index" << this->openFileCount[i] << "\n";
+    // std::cout << "OpenFiles:" << std::endl;
+    // for(int i = 0; i < amount_of_files; i++) {
+    //     std::cout << "Index" << this->openFileCount[i] << "\n";
+    // }
+    // std::cout << std::endl;
+    printf("No se implemento\n");
+}
+
+void OpenFiles::SetMemory() {
+    int index = 0;
+    for(;index <= 3; ++index){
+        this->openFilesMap->Mark(index);
+        this->openFileCount[index] = index;
     }
-    std::cout << std::endl;
 }
