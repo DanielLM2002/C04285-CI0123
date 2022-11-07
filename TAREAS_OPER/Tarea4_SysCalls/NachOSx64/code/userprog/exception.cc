@@ -81,29 +81,73 @@ void NachOS_Exit()
 /*
  *  System call interface: SpaceId Exec( char * )
  */
-void NachOS_Exec()
-{ // System call 2
+void NachOS_Exec() { // System call 2
+   int addr = machine->ReadRegister(4);
+   char *name = new char[Char_Size_Of_Array];
+   int i = 0;
+   bool end = false;
+   do {
+      machine->ReadMem(addr + i, 1, (int *) &name[i]);
+      if (name[i] == '\0') {
+         end = true;
+      }
+      i++;
+   } while (!end);
+   OpenFile *executable = fileSystem->Open(name);
+   if (executable == NULL) {
+      printf("Unable to open file %s", name);
+   }
 }
 
 /*
  *  System call interface: int Join( SpaceId )
  */
-void NachOS_Join()
-{ // System call 3
+void NachOS_Join() { // System call 3
+   int id = machine->ReadRegister(4);
+   Thread *thread = (Thread *) id;
+   thread->Join();
+   currentThread->fileTable->removeThread();
 }
 
 /*
  *  System call interface: void Create( char * )
  */
-void NachOS_Create()
-{ // System call 4
+void NachOS_Create() { // System call 4
+   int addr = machine->ReadRegister(4);
+   char *name = new char[Char_Size_Of_Array];
+   int i = 0;
+   bool end = false;
+   do {
+      machine->ReadMem(addr + i, 1, (int *) &name[i]);
+      if (name[i] == '\0') {
+         end = true;
+      }
+      i++;
+   } while (!end);
+   fileSystem->Create(name, 0);
 }
 
 /*
  *  System call interface: OpenFileId Open( char * )
  */
-void NachOS_Open()
-{ // System call 5
+void NachOS_Open() { // System call 5
+   int addr = machine->ReadRegister(4);
+   char *name = new char[Char_Size_Of_Array];
+   int i = 0;
+   bool end = false;
+   do {
+      machine->ReadMem(addr + i, 1, (int *) &name[i]);
+      if (name[i] == '\0') {
+         end = true;
+      }
+      i++;
+   } while (!end);
+   OpenFile *openFile = fileSystem->Open(name);
+   if (openFile == NULL) {
+      printf("Unable to open file %s", name);
+   }
+   int id = currentThread->space->AddOpenFile(openFile);
+   machine->WriteRegister(2, id);
 }
 
 /*
@@ -244,15 +288,20 @@ void NachOS_Close() { // System call 8
 /*
  *  System call interface: void Fork( void (*func)() )
  */
-void NachOS_Fork()
-{ // System call 9
+void NachOS_Fork() { // System call 9
+   int func = machine->ReadRegister(4);
+   Thread *newThread = new Thread("Forked Thread");
+   newThread->space = currentThread->space;
+   currentThread->fileTable->addThread();
+   newThread->Fork((VoidFunctionPtr) func, 0);
+
 }
 
 /*
  *  System call interface: void Yield()
  */
-void NachOS_Yield()
-{ // System call 10
+void NachOS_Yield() { // System call 10
+   currentThread->Yield();
 }
 
 /*
