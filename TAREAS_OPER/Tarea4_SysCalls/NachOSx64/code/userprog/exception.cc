@@ -20,7 +20,6 @@
 // Copyright (c) 1992-1993 The Regents of the University of California.
 // All rights reserved.  See copyright.h for copyright notice and limitation
 // of liability and disclaimer of warranty provisions.
-
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
@@ -82,7 +81,7 @@ void NachOS_Exit()
  *  System call interface: SpaceId Exec( char * )
  */
 void NachOS_Exec() { // System call 2
-   int addr = machine->ReadRegister(4);
+   /*int addr = machine->ReadRegister(4);
    char *name = new char[Char_Size_Of_Array];
    int i = 0;
    bool end = false;
@@ -96,24 +95,25 @@ void NachOS_Exec() { // System call 2
    OpenFile *executable = fileSystem->Open(name);
    if (executable == NULL) {
       printf("Unable to open file %s", name);
-   }
+   }*/
 }
 
 /*
  *  System call interface: int Join( SpaceId )
- */
+*/ 
 void NachOS_Join() { // System call 3
-   int id = machine->ReadRegister(4);
+   /*int id = machine->ReadRegister(4);
    Thread *thread = (Thread *) id;
    thread->Join();
-   currentThread->fileTable->removeThread();
+   currentThread->fileTable->removeThread();*/
 }
+
 
 /*
  *  System call interface: void Create( char * )
  */
 void NachOS_Create() { // System call 4
-   int addr = machine->ReadRegister(4);
+   /*int addr = machine->ReadRegister(4);
    char *name = new char[Char_Size_Of_Array];
    int i = 0;
    bool end = false;
@@ -124,14 +124,15 @@ void NachOS_Create() { // System call 4
       }
       i++;
    } while (!end);
-   fileSystem->Create(name, 0);
+   fileSystem->Create(name, 0);*/
 }
+
 
 /*
  *  System call interface: OpenFileId Open( char * )
  */
 void NachOS_Open() { // System call 5
-   int addr = machine->ReadRegister(4);
+   /*int addr = machine->ReadRegister(4);
    char *name = new char[Char_Size_Of_Array];
    int i = 0;
    bool end = false;
@@ -147,7 +148,7 @@ void NachOS_Open() { // System call 5
       printf("Unable to open file %s", name);
    }
    int id = currentThread->space->AddOpenFile(openFile);
-   machine->WriteRegister(2, id);
+   machine->WriteRegister(2, id);*/
 }
 
 /*
@@ -288,20 +289,44 @@ void NachOS_Close() { // System call 8
 /*
  *  System call interface: void Fork( void (*func)() )
  */
-void NachOS_Fork() { // System call 9
+void NachOS_Fork(){}  // System call 9
+/*
    int func = machine->ReadRegister(4);
    Thread *newThread = new Thread("Forked Thread");
    newThread->space = currentThread->space;
    currentThread->fileTable->addThread();
-   newThread->Fork((VoidFunctionPtr) func, 0);
+   newThread->Fork((VoidFunctionPtr) func, 0); // 0 is the argument
 
-}
+DEBUG( 'u', "Entering Fork System call\n" );
+	// We need to create a new kernel thread to execute the user thread
+	Thread * newT = new Thread( "child to execute Fork code" );
+
+	// We need to share the Open File Table structure with this new child
+
+	// Child and father will also share the same address space, except for the stack
+	// Text, init data and uninit data are shared, a new stack area must be created
+	// for the new child
+	// We suggest the use of a new constructor in AddrSpace class,
+	// This new constructor will copy the shared segments (space variable) from currentThread, passed
+	// as a parameter, and create a new stack for the new child
+	newT->space = new AddrSpace( currentThread->space );
+
+	// We (kernel)-Fork to a new method to execute the child code
+	// Pass the user routine address, now in register 4, as a parameter
+	// Note: in 64 bits register 4 need to be casted to (void *)
+	newT->Fork( NachosForkThread, machine->ReadRegister( 4 ) );
+
+	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC registers
+
+	DEBUG( 'u', "Exiting Fork System call\n" );
+}	// Kernel_Fork
+*/
 
 /*
  *  System call interface: void Yield()
  */
 void NachOS_Yield() { // System call 10
-   currentThread->Yield();
+   //currentThread->Yield();
 }
 
 /*

@@ -41,6 +41,7 @@
 #include "copyright.h"
 #include "utility.h"
 
+
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
@@ -100,6 +101,8 @@ class Thread {
     const char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
     OpenFiles* fileTable;
+    //AddrSpace* space;
+    
 
   private:
     // some of the private data for this class is listed above

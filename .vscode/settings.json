@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "*.tcc": "c",
+        "chrono": "c",
+        "vector": "c",
+        "exception": "c",
+        "string_view": "c",
+        "functional": "c",
+        "fstream": "c",
+        "iosfwd": "c",
+        "istream": "c",
+        "ratio": "c",
+        "sstream": "c",
+        "system_error": "c",
+        "memory": "c"
+    }
+}
