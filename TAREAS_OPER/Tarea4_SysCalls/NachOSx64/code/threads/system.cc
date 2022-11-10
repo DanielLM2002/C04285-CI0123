@@ -92,6 +92,7 @@ Initialize(int argc, char **argv)
     int argCount;
     const char* debugArgs = "";
     bool randomYield = false;
+    MiMapa = new BitMap(NumPhysPages);
     
 
 // 2007, Jose Miguel Santos Espino

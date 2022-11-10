@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <unistd.h>
 #include "synch.h"
+#include "addrspace.h"
 
 #define Char_Size_Of_Array 180
 
@@ -81,7 +82,7 @@ void NachOS_Exit() { // System call 1
  *  System call interface: SpaceId Exec( char * )
  */
 void NachOS_Exec() { // System call 2
-   /*int addr = machine->ReadRegister(4);
+   int addr = machine->ReadRegister(4);
    char *name = new char[Char_Size_Of_Array];
    int i = 0;
    bool end = false;
@@ -95,7 +96,7 @@ void NachOS_Exec() { // System call 2
    OpenFile *executable = fileSystem->Open(name);
    if (executable == NULL) {
       printf("Unable to open file %s", name);
-   }*/
+   }
 }
 
 /*
@@ -289,13 +290,8 @@ void NachOS_Close() { // System call 8
 /*
  *  System call interface: void Fork( void (*func)() )
  */
-void NachOS_Fork(){}  // System call 9
-/*
-   int func = machine->ReadRegister(4);
-   Thread *newThread = new Thread("Forked Thread");
-   newThread->space = currentThread->space;
-   currentThread->fileTable->addThread();
-   newThread->Fork((VoidFunctionPtr) func, 0); // 0 is the argument
+void NachOS_Fork() {  // System call 9
+
 
 DEBUG( 'u', "Entering Fork System call\n" );
 	// We need to create a new kernel thread to execute the user thread
@@ -314,13 +310,12 @@ DEBUG( 'u', "Entering Fork System call\n" );
 	// We (kernel)-Fork to a new method to execute the child code
 	// Pass the user routine address, now in register 4, as a parameter
 	// Note: in 64 bits register 4 need to be casted to (void *)
-	newT->Fork( NachosForkThread, machine->ReadRegister( 4 ) );
+	newT->Fork( NachosForkThread,(void*) machine->ReadRegister( 4 ) );
 
 	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC registers
 
 	DEBUG( 'u', "Exiting Fork System call\n" );
 }	// Kernel_Fork
-*/
 
 void NachosForkThread( void * p ) { // for 64 bits version
 
