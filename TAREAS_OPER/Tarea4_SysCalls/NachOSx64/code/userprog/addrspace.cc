@@ -18,6 +18,7 @@
 #include "copyright.h"
 #include "system.h"
 #include "addrspace.h"
+#include "openfile.h"
 #include "noff.h"
 
 //----------------------------------------------------------------------
@@ -56,6 +57,23 @@ SwapHeader (NoffHeader *noffH)
 //
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
+
+/*
+* Constructor de la clase AddrSpace que acepta un bitmap padre
+* @param executable Archivo que contiene el codigo del programa a ejecutar
+*/
+AddrSpace::AddrSpace(AddrSpace* parentSpace) {
+    numPages = parentSpace->GetNumPages();
+    pageTable = new TranslationEntry[numPages];
+    for (unsigned int i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;
+        pageTable[i].physicalPage = parentSpace->GetPageTable()[i].physicalPage;
+        pageTable[i].valid = parentSpace->GetPageTable()[i].valid;
+        pageTable[i].use = parentSpace->GetPageTable()[i].use;
+        pageTable[i].dirty = parentSpace->GetPageTable()[i].dirty;
+        pageTable[i].readOnly = parentSpace->GetPageTable()[i].readOnly;
+    }
+}
 
 AddrSpace::AddrSpace(OpenFile *executable)
 {
