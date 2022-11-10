@@ -92,6 +92,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
+    numPages = new BitMap(numPages);
 
     ASSERT(numPages <= NumPhysPages);		// check we're not trying
 						// to run anything too big --
