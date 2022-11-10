@@ -16,6 +16,7 @@
 #include "copyright.h"
 #include "bitmap.h"
 #include "filesys.h"
+//#include "system.h"
 
 
 #define UserStackSize		1024 	// increase this as necessary!

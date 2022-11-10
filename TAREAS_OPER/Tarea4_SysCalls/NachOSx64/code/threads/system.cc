@@ -29,6 +29,10 @@ const long long DEFAULT_TIME_SLICE = 50000;
 FileSystem  *fileSystem;
 #endif
 
+#ifdef USER_PROGRAM
+BitMap * MiMapa;
+#endif
+
 #ifdef FILESYS
 SynchDisk   *synchDisk;
 #endif

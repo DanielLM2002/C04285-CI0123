@@ -63,16 +63,19 @@ SwapHeader (NoffHeader *noffH)
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
 AddrSpace::AddrSpace(AddrSpace* parentSpace) {
-    numPages = parentSpace->GetNumPages();
-    pageTable = new TranslationEntry[numPages];
-    for (unsigned int i = 0; i < numPages; i++) {
+    numPages = parentSpace->NumPages();
+    pageTable = new TranslationEntry[parentSpace->numPages];
+    unsigned int size;
+    size = parentSpace ->numPages * PageSize;
+    for (unsigned int i = 0; i < (parentSpace->numPages - 8); i++) {
         pageTable[i].virtualPage = i;
-        pageTable[i].physicalPage = parentSpace->GetPageTable()[i].physicalPage;
-        pageTable[i].valid = parentSpace->GetPageTable()[i].valid;
-        pageTable[i].use = parentSpace->GetPageTable()[i].use;
-        pageTable[i].dirty = parentSpace->GetPageTable()[i].dirty;
-        pageTable[i].readOnly = parentSpace->GetPageTable()[i].readOnly;
+        pageTable[i].physicalPage = parentSpace->pageTable[i].physicalPage;
+        pageTable[i].valid = parentSpace->pageTable[i].valid;
+        pageTable[i].use = parentSpace->pageTable[i].use;
+        pageTable[i].dirty = parentSpace->pageTable[i].dirty;
+        pageTable[i].readOnly = parentSpace->pageTable[i].readOnly;
     }
+
 }
 
 AddrSpace::AddrSpace(OpenFile *executable)
