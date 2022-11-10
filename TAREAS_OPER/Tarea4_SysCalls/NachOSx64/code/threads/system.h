@@ -49,4 +49,11 @@ extern SynchDisk   *synchDisk;
 extern PostOffice* postOffice;
 #endif
 
+#ifdef USER_PROGRAM
+#include "machine.h"
+extern Machine* machine;	// user program memory and registers
+
+extern BitMap * MiMapa;		// Declares a global variable defined elsewhere
+#endif
+
 #endif // SYSTEM_H
