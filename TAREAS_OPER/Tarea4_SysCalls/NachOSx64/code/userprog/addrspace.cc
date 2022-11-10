@@ -20,6 +20,7 @@
 #include "addrspace.h"
 #include "openfile.h"
 #include "noff.h"
+#include "synch.h"
 
 //----------------------------------------------------------------------
 // SwapHeader
@@ -27,6 +28,8 @@
 //	object file header, in case the file was generated on a little
 //	endian machine, and we're now running on a big endian machine.
 //----------------------------------------------------------------------
+
+
 
 static void 
 SwapHeader (NoffHeader *noffH)
@@ -65,8 +68,6 @@ SwapHeader (NoffHeader *noffH)
 AddrSpace::AddrSpace(AddrSpace* parentSpace) {
     numPages = parentSpace->NumPages();
     pageTable = new TranslationEntry[parentSpace->numPages];
-    unsigned int size;
-    size = parentSpace ->numPages * PageSize;
     for (unsigned int i = 0; i < (parentSpace->numPages - 8); i++) {
         pageTable[i].virtualPage = i;
         pageTable[i].physicalPage = parentSpace->pageTable[i].physicalPage;
@@ -75,7 +76,6 @@ AddrSpace::AddrSpace(AddrSpace* parentSpace) {
         pageTable[i].dirty = parentSpace->pageTable[i].dirty;
         pageTable[i].readOnly = parentSpace->pageTable[i].readOnly;
     }
-
 }
 
 AddrSpace::AddrSpace(OpenFile *executable)
@@ -108,6 +108,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
+    Lock MiCandado("MiCandado");
 	pageTable[i].physicalPage = i;
 	pageTable[i].valid = true;
 	pageTable[i].use = false;

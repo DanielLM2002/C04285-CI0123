@@ -67,14 +67,14 @@ void NachOS_Halt()
 /*
  *  System call interface: void Exit( int )
  */
-void NachOS_Exit()
-{ // System call 1
-   int status = machine->ReadRegister(4);
-   if(status == 0){
+void NachOS_Exit() { // System call 1
+   
+      int exitStatus = machine->ReadRegister(PARAM_1_REG);
+   
+      DEBUG('a', "Exit, initiated by user program.\n");
+      DEBUG('a', "Exit status: %d\n", exitStatus);
+   
       currentThread->Finish();
-   }else {
-      perror("No se pudo salir bien, ERRORR!!");
-   }
 }
 
 /*
@@ -322,11 +322,31 @@ DEBUG( 'u', "Entering Fork System call\n" );
 }	// Kernel_Fork
 */
 
+void NachosForkThread( void * p ) { // for 64 bits version
+
+   AddrSpace *space;
+
+   space = currentThread->space;
+   space->InitRegisters();             // set the initial register values
+   space->RestoreState();              // load page table register
+
+// Set the return address for this thread to the same as the main thread
+// This will lead this thread to call the exit system call and finish
+   machine->WriteRegister( RetAddrReg, 4 );
+
+   machine->WriteRegister( PCReg, (long) p );
+   machine->WriteRegister( NextPCReg, (long) p + 4 );
+
+   machine->Run();                     // jump to the user progam
+   ASSERT(FALSE);
+
+}
+
 /*
  *  System call interface: void Yield()
  */
 void NachOS_Yield() { // System call 10
-   //currentThread->Yield();
+   currentThread->Yield();
 }
 
 /*
