@@ -103,10 +103,7 @@ void NachOS_Exec() { // System call 2
  *  System call interface: int Join( SpaceId )
 */ 
 void NachOS_Join() { // System call 3
-   /*int id = machine->ReadRegister(4);
-   Thread *thread = (Thread *) id;
-   thread->Join();
-   currentThread->fileTable->removeThread();*/
+
 }
 
 
@@ -114,18 +111,6 @@ void NachOS_Join() { // System call 3
  *  System call interface: void Create( char * )
  */
 void NachOS_Create() { // System call 4
-   /*int addr = machine->ReadRegister(4);
-   char *name = new char[Char_Size_Of_Array];
-   int i = 0;
-   bool end = false;
-   do {
-      machine->ReadMem(addr + i, 1, (int *) &name[i]);
-      if (name[i] == '\0') {
-         end = true;
-      }
-      i++;
-   } while (!end);
-   fileSystem->Create(name, 0);*/
 }
 
 
@@ -133,23 +118,6 @@ void NachOS_Create() { // System call 4
  *  System call interface: OpenFileId Open( char * )
  */
 void NachOS_Open() { // System call 5
-   /*int addr = machine->ReadRegister(4);
-   char *name = new char[Char_Size_Of_Array];
-   int i = 0;
-   bool end = false;
-   do {
-      machine->ReadMem(addr + i, 1, (int *) &name[i]);
-      if (name[i] == '\0') {
-         end = true;
-      }
-      i++;
-   } while (!end);
-   OpenFile *openFile = fileSystem->Open(name);
-   if (openFile == NULL) {
-      printf("Unable to open file %s", name);
-   }
-   int id = currentThread->space->AddOpenFile(openFile);
-   machine->WriteRegister(2, id);*/
 }
 
 /*
