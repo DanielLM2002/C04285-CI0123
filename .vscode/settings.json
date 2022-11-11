@@ -12,6 +12,7 @@
         "ratio": "c",
         "sstream": "c",
         "system_error": "c",
-        "memory": "c"
+        "memory": "c",
+        "syscall.h": "c"
     }
 }

@@ -1,4 +1,4 @@
-#include "syscall.h"
+#include "syscall.h" //Muchas gracias al cientifico de la computacion Carlos Quesada Estrada por el programa de prueba
 void hijo(int);
 int id;
 int main() {
