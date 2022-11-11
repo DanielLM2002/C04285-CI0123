@@ -66,15 +66,24 @@ SwapHeader (NoffHeader *noffH)
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
 AddrSpace::AddrSpace(AddrSpace* parentSpace) {
-    numPages = parentSpace->numPages * PageSize; 
+    numPages = parentSpace->numPages; 
     pageTable = new TranslationEntry[parentSpace->numPages];
-    for (unsigned int i = 0; i < (parentSpace->numPages - 8); i++) {
+    unsigned int i = 0;
+    for (i; i <= (parentSpace->numPages - 8); i++) {
         pageTable[i].virtualPage = i;
         pageTable[i].physicalPage = parentSpace->pageTable[i].physicalPage;
         pageTable[i].valid = parentSpace->pageTable[i].valid;
         pageTable[i].use = parentSpace->pageTable[i].use;
         pageTable[i].dirty = parentSpace->pageTable[i].dirty;
         pageTable[i].readOnly = parentSpace->pageTable[i].readOnly;
+    }
+    for(i; i < parentSpace->numPages; i++) {
+        pageTable[i].virtualPage = i;
+        pageTable[i].physicalPage = MiMapa->Find();
+        pageTable[i].valid = true;
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;
     }
 }
 

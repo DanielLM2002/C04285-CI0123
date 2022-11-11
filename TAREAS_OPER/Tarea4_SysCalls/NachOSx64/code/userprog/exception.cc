@@ -301,7 +301,7 @@ DEBUG( 'u', "Entering Fork System call\n" );
 	// Note: in 64 bits register 4 need to be casted to (void *)
 	newT->Fork(NachosForkThread, (void*) machine->ReadRegister(4));
 
-	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC registers
+	//returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC registers
 
 	DEBUG( 'u', "Exiting Fork System call\n" );
 }	// Kernel_Fork
