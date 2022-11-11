@@ -66,7 +66,7 @@ SwapHeader (NoffHeader *noffH)
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
 AddrSpace::AddrSpace(AddrSpace* parentSpace) {
-    numPages = parentSpace->NumPages();
+    numPages = parentSpace->numPages * PageSize; 
     pageTable = new TranslationEntry[parentSpace->numPages];
     for (unsigned int i = 0; i < (parentSpace->numPages - 8); i++) {
         pageTable[i].virtualPage = i;

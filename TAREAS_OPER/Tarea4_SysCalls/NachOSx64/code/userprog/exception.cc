@@ -41,6 +41,26 @@
 
 Lock syscall_lock ("syscall_lock");
 
+void NachosForkThread( void * p ) { // for 64 bits version
+
+   AddrSpace *space;
+
+   space = currentThread->space;
+   space->InitRegisters();             // set the initial register values
+   space->RestoreState();              // load page table register
+
+// Set the return address for this thread to the same as the main thread
+// This will lead this thread to call the exit system call and finish
+   machine->WriteRegister( RetAddrReg, 4 );
+
+   machine->WriteRegister( PCReg, (long) p );
+   machine->WriteRegister( NextPCReg, (long) p + 4 );
+
+   machine->Run();                     // jump to the user progam
+   ASSERT(false);
+
+}
+
 void returnFromSystemCall()
 {
 
@@ -79,7 +99,7 @@ void NachOS_Exit() { // System call 1
 }
 
 /*
- *  System call interface: SpaceId Exec( char * )
+ *  System call interface: SpaceId Exec( char ../userprog/exception.cc:282:21: error: ‘NachosForkThread’ was not declared in this scope* )
  */
 void NachOS_Exec() { // System call 2
    int addr = machine->ReadRegister(4);
@@ -279,32 +299,14 @@ DEBUG( 'u', "Entering Fork System call\n" );
 	// We (kernel)-Fork to a new method to execute the child code
 	// Pass the user routine address, now in register 4, as a parameter
 	// Note: in 64 bits register 4 need to be casted to (void *)
-	newT->Fork( NachosForkThread,(void*) machine->ReadRegister( 4 ) );
+	newT->Fork(NachosForkThread, (void*) machine->ReadRegister(4));
 
 	returnFromSystemCall();	// This adjust the PrevPC, PC, and NextPC registers
 
 	DEBUG( 'u', "Exiting Fork System call\n" );
 }	// Kernel_Fork
 
-void NachosForkThread( void * p ) { // for 64 bits version
 
-   AddrSpace *space;
-
-   space = currentThread->space;
-   space->InitRegisters();             // set the initial register values
-   space->RestoreState();              // load page table register
-
-// Set the return address for this thread to the same as the main thread
-// This will lead this thread to call the exit system call and finish
-   machine->WriteRegister( RetAddrReg, 4 );
-
-   machine->WriteRegister( PCReg, (long) p );
-   machine->WriteRegister( NextPCReg, (long) p + 4 );
-
-   machine->Run();                     // jump to the user progam
-   ASSERT(FALSE);
-
-}
 
 /*
  *  System call interface: void Yield()
@@ -477,24 +479,6 @@ void NachOS_Connect() {
  *  System call interface: int Bind( Socket_t, int )
  */
 void NachOS_Bind() { // System call 32
-   // int nachos_handle = machine->ReadRegister(4);
-   // int bufferPointer = machine->ReadRegister(5);
-   // int size = machine->ReadRegister( );
-   // int container = 0;
-   // if(currentThread->fileTable->isOpen(nachos_handle)) {
-   //    struct sockaddr_in server;
-   //    memset((char*) &server, 0, sizeof(server));
-   //    server.sin_family = AF_INET;
-   //    server.sin_port = htons(bufferPointer);
-   //    server.sin_addr.s_addr = htonl(INADDR_ANY);
-   //    int unix_handle = currentThread->fileTable->getOpenCount(nachos_handle);
-   //    container = bind(unix_handle, (struct sockaddr *) &server, sizeof(server));
-   //    if (container == -1) {
-   //       perror("No se pudo hacer bind");
-   //       exit(2);
-   //    }
-   // }
-   // machine->WriteRegister(2, container);
 }
 
 /*
