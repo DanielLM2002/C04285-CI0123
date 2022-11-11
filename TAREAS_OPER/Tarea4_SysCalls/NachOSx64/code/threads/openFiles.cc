@@ -72,11 +72,6 @@ int OpenFiles::getOpenCount(int fileHandle) {
 }
 
 void OpenFiles::Print() {
-    // std::cout << "OpenFiles:" << std::endl;
-    // for(int i = 0; i < amount_of_files; i++) {
-    //     std::cout << "Index" << this->openFileCount[i] << "\n";
-    // }
-    // std::cout << std::endl;
     printf("No se implemento\n");
 }
 
