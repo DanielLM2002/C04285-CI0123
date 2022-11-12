@@ -98,31 +98,47 @@ void NachOS_Exit() { // System call 1
       currentThread->Finish();
 }
 
+void NachosExecThread(void* p) {}
+
 /*
  *  System call interface: SpaceId Exec( char ../userprog/exception.cc:282:21: error: ‘NachosForkThread’ was not declared in this scope* )
  */
 void NachOS_Exec() { // System call 2
-   int addr = machine->ReadRegister(4);
-   char *name = new char[Char_Size_Of_Array];
-   int i = 0;
-   bool end = false;
-   do {
-      machine->ReadMem(addr + i, 1, (int *) &name[i]);
-      if (name[i] == '\0') {
-         end = true;
+   
+      int vaddr = machine->ReadRegister(PARAM_1_REG);
+      int i = 0;
+      char filename[Char_Size_Of_Array];
+      int ch;
+      int result;
+   
+      do {
+         machine->ReadMem(vaddr + i, 1, &ch);
+         filename[i] = (char) ch;
+         i++;
+      } while (ch != '\0');
+   
+      DEBUG('a', "Exec, initiated by user program.\n");
+      DEBUG('a', "Exec filename: %s\n", filename);
+   
+      OpenFile *executable = fileSystem->Open(filename);
+      AddrSpace *space;
+   
+      if (executable == NULL) {
+         DEBUG('a', "Unable to open file %s");
       }
-      i++;
-   } while (!end);
-   OpenFile *executable = fileSystem->Open(name);
-   if (executable == NULL) {
-      printf("Unable to open file %s", name);
-   }
 }
 
 /*
  *  System call interface: int Join( SpaceId )
 */ 
 void NachOS_Join() { // System call 3
+      
+   int spaceId = machine->ReadRegister(PARAM_1_REG);
+      
+   DEBUG('a', "Join, initiated by user program.\n");
+   DEBUG('a', "Join spaceId: %d\n", spaceId);
+      
+   currentThread->Finish();
 
 }
 
