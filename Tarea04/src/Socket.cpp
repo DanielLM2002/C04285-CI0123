@@ -140,6 +140,12 @@ int Socket::Write(const char* info) {
   return write(this->id, info, strlen(info));
 }
 
+/**
+ * @brief Method that writes to a socket
+ * @param info Information to write
+ * @param length Size of the information vector
+ * @return int 
+ */
 int Socket::sendTo(const void *, int, void *) {
   struct sockaddr_in host4;
   memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
@@ -156,6 +162,11 @@ int Socket::sendTo(const void *, int, void *) {
   return st;
 }
 
+/**
+ * @brief   Method that writes to a socket
+ * 
+ * @return int 
+ */
 int Socket::recvFrom(void *, int, void *) {
   struct sockaddr_in host4;
   memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
