@@ -140,45 +140,23 @@ int Socket::Write(const char* info) {
   return write(this->id, info, strlen(info));
 }
 
-/**
- * @brief Method that writes to a socket
- * @param info Information to write
- * @param length Size of the information vector
- * @return int 
- */
-int Socket::sendTo(const void *, int, void *) {
-  struct sockaddr_in host4;
-  memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
-  host4.sin_family = AF_INET;
-  host4.sin_port = htons(this->port);
-  host4.sin_addr.s_addr = htonl(INADDR_ANY);
-  int st = sendto(this->id, reinterpret_cast<sockaddr *>(&host4),
-           sizeof(host4), 0, reinterpret_cast<sockaddr *>(&host4),
-           sizeof(host4));
-  if (st == -1) {
+int Socket::sendTo(const void* message, int lenght, void* address){
+  int bytesSended =  sendto(this->id, message, lenght, 0, (const struct sockaddr*)address, sizeof(sockaddr_in));
+  if (bytesSended == -1) {
     perror("Socket::sendTo");
     exit(2);
   }
-  return st;
+  printf("Bytes sent: %d", bytesSended);
+  return bytesSended;
 }
 
-/**
- * @brief   Method that writes to a socket
- * 
- * @return int 
- */
-int Socket::recvFrom(void *, int, void *) {
-  struct sockaddr_in host4;
-  memset(reinterpret_cast<char *>(&host4), 0, sizeof(host4));
-  host4.sin_family = AF_INET;
-  host4.sin_port = htons(this->port);
-  host4.sin_addr.s_addr = htonl(INADDR_ANY);
-  int st = recvfrom(this->id, reinterpret_cast<sockaddr *>(&host4),
-           sizeof(host4), 0, reinterpret_cast<sockaddr *>(&host4),
-           sizeof(host4));
-  if (st == -1) {
+int Socket::recvFrom(void* buffer, int bufferSize, void* address){
+  socklen_t addrlen = sizeof(address);
+  int bytesReceived = recvfrom(this->id, buffer, bufferSize, 0, (struct sockaddr*)address, &addrlen);
+  if (bytesReceived == -1) {
     perror("Socket::recvFrom");
     exit(2);
   }
-  return st;
+  printf("Bytes received: %d", bytesReceived);
+  return bytesReceived;
 }
