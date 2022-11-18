@@ -1,5 +1,5 @@
 # Tarea 4 UDP C04285
-La implementación de esta tarea se encuentra en la carpeta correspondiente y cuenta con un nuevo main para poder usar el makefile usado anteriormente, por ende las carpetas de test no hacen nada.
+El archivo contiene el codigo de toda la tarea 4
 
 -----
 
@@ -7,7 +7,7 @@ La implementación de esta tarea se encuentra en la carpeta correspondiente y cu
 ```
 make udp-client && make udp-server
 ```
-Para ejecutar debemos abrir dos terminales, en una ejecutamos el servidor y en la otra el cliente, para esto debemos ejecutar los siguientes comandos:
+Para ejecutar debemos abrir dos terminales, en una ejecutamos el servidor y en la otra el cliente, para esto debemos ejecutar los siguientes comandos respectivamente:
 ```
 ./udp-server
 ```
