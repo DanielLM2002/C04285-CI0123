@@ -5,5 +5,16 @@ La implementación de esta tarea se encuentra en la carpeta correspondiente y cu
 
 ## Compilación
 ```
-coming soon
+make udp-client && make udp-server
 ```
+Para ejecutar debemos abrir dos terminales, en una ejecutamos el servidor y en la otra el cliente, para esto debemos ejecutar los siguientes comandos:
+```
+./udp-server
+```
+
+```
+./udp-client
+```
+DEBE DE HACERSE EN ESTE ORDEN, DE LO CONTRARIO EL CLIENTE NO PODRÁ ENVIAR MENSAJES AL SERVIDOR.
+
+THX por leer >:D
