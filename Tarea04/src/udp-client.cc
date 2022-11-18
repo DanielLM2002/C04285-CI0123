@@ -8,7 +8,7 @@
 #include <arpa/inet.h> 
 #include <netinet/in.h> 
 
-#include "Socket.hpp"
+#include "Socket.h"
 
 #define PORT    9876 
 #define MAXLINE 1024 
