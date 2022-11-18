@@ -160,3 +160,13 @@ int Socket::recvFrom(void* buffer, int bufferSize, void* address){
   printf("Bytes received: %d", bytesReceived);
   return bytesReceived;
 }
+
+int Socket::Bind( int port ) {
+  struct sockaddr_in server_addr;
+  server_addr.sin_family = AF_INET;
+  server_addr.sin_addr.s_addr = htonl( INADDR_ANY );
+  server_addr.sin_port = htons( port );
+  size_t len = sizeof( server_addr );
+
+  return bind( this->id, (const sockaddr*) &server_addr, len );
+}
