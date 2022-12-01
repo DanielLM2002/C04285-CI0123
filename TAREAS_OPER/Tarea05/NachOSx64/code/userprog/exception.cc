@@ -40,6 +40,8 @@
 #define RETURN_REG 2
 
 Lock syscall_lock ("syscall_lock");
+int i = -1;
+int pageFaults = 0;
 
 void NachosForkThread( void * p ) { // for 64 bits version
 
@@ -686,9 +688,16 @@ void ExceptionHandler(ExceptionType which)
       break;
 
    case PageFaultException:
-   {
+      printf("Page fault exception\n");
+      printf("Unexpected page fault exception %d\n", which);
+      int virtualADD = machine->ReadRegister(39);
+      printf("Virtual Address: %d " , virtualADD , "\n");
+      int vpn = (unsigned)virtualADD / PageSize;
+      printf("Virtual Page Number: %d " , vpn , "\n");
+      pageFaults++;
+      printf("Page Faults: %d " , pageFaults , "\n");
+      ///currentThread->space->MoverAMemoria(vpn);Revisar la clase ADDRspace para ver si se puede hacer esto
       break;
-   }
 
    case ReadOnlyException:
       printf("Read Only exception (%d)\n", which);

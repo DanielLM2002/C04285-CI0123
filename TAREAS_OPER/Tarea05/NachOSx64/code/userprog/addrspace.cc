@@ -19,7 +19,6 @@
 #include "system.h"
 #include "addrspace.h"
 #include "openfile.h"
-#include "noff.h"
 #include "synch.h"
 
 //----------------------------------------------------------------------
@@ -87,8 +86,12 @@ AddrSpace::AddrSpace(AddrSpace* parentSpace) {
     }
 }
 
-AddrSpace::AddrSpace(OpenFile *executable)
+AddrSpace::AddrSpace(OpenFile *executable, const char * filename)
 {
+    if (Swap == NULL) {
+        Swap = fileSystem->Open("SWAP");
+    }
+
     NoffHeader noffH;
     unsigned int i, size;
 
@@ -97,6 +100,7 @@ AddrSpace::AddrSpace(OpenFile *executable)
 		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
     	SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
+        noffHSwapped = noffH;
 
 // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
