@@ -138,7 +138,7 @@ AddrSpace::AddrSpace(OpenFile *executable, const char * filename)
 
 	    pageTable[i].use = false;
 	    pageTable[i].dirty = false;
-	    ageTable[i].readOnly = false;  // if the code segment was entirely on 
+	    pageTable[i].readOnly = false;  // if the code segment was entirely on 
 					// a separate page, we could set its 
 					// pages to be read-only
     }
@@ -165,20 +165,167 @@ AddrSpace::AddrSpace(OpenFile *executable, const char * filename)
         int numPages2 = divRoundUp(noffH.code.size, numPages);
 		int addrsMem = noffH.code.inFileAddr;
 		for (int j = 0 ; j < numPages2; ++j) {
-				executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage*128]), 
+			executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage*128]), 
                                         PageSize, addrsMem);
-				addrsMem = addrsMem + 128;
-			}
+			addrsMem = addrsMem + 128;
+		}
         int numPages3 = divRoundUp(noffH.initData.size, numPages);
 		addrsMem = noffH.initData.inFileAddr;
 		for (int j = numPages2; j < numPages3; ++j) {
-				executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage*128]),
+			executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage*128]),
                                         PageSize, addrsMem);
-				addrsMem = addrsMem + 128;
-				}
+			addrsMem = addrsMem + 128;
+		}
     #endif
 
 
+}
+int pageIterator = 0;
+void AddrSpace::moveMemory(int vpn) {
+    for (int i = 0; i < 4; i++) {
+        pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;
+        pageTable[machine->tlb[i].virtualPage].use = machine->tlb[i].use;
+    }
+    OpenFile *execPrg = fileSystem->Open(programExecutable);
+    int numPages1 = divRoundUp(noffHSwapped.code.size, PageSize);
+    int numPages2 = divRoundUp(noffHSwapped.initData.size, PageSize);
+    bool isValid = pageTable[vpn].valid;
+    bool isDirty = pageTable[vpn].dirty;
+    int physPagNum = 0;
+    if(vpn<numPages1) {
+        printf("Code: \n" );
+        if(!isValid) {
+            physPagNum = MiMapa->Find();
+            if(physPagNum == -1) {
+                physPagNum = searchVictim(vpn);
+            }
+            pageTable[vpn].physicalPage = physPagNum;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = true;
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+            execPrg->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*PageSize]),
+                            PageSize,sizeof(NoffHeader)+vpn*PageSize);
+            MemoryNewADD[physPagNum].vpn = vpn;
+        } else {
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+        }
+    } else if(vpn < numPages2) {
+        printf("Inicial Data: \n" );
+        if(!isDirty && !isValid) {
+            physPagNum = MiMapa->Find();
+            if(physPagNum == -1) {
+                physPagNum = searchVictim(vpn);
+                if(pageTable[machine->tlb[pageIterator].virtualPage].dirty) {
+                    int space = swapMap->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[pageIterator].physicalPage)]),
+                                    PageSize,space*PageSize);
+                    MiMapa->Clear(machine->tlb[pageIterator].physicalPage);
+                    pageTable[machine->tlb[pageIterator].virtualPage].physicalPage = space;
+                    pageTable[machine->tlb[pageIterator].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = physPagNum;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+            execPrg->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*PageSize]),
+                                PageSize, sizeof(NoffHeader)+(vpn*PageSize));
+            MemoryNewADD[NumPhysPages].vpn = vpn;
+        } else if(isValid) {
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+        } else {
+            int oldMemory = pageTable[vpn].physicalPage;
+            physPagNum = MiMapa->Find();
+            if(physPagNum == -1) {
+                physPagNum = searchVictim(vpn);
+                if(pageTable[machine->tlb[pageIterator].virtualPage].dirty) {
+                    int space = swapMap->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[pageIterator].physicalPage)]),
+                                    PageSize,space*PageSize);
+                    MiMapa->Clear(machine->tlb[pageIterator].physicalPage);
+                    pageTable[machine->tlb[pageIterator].virtualPage].physicalPage = space;
+                    pageTable[machine->tlb[pageIterator].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = physPagNum;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = true;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+            Swap->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*128]),
+                            PageSize, oldMemory*PageSize);
+            MiMapa->Clear(oldMemory);
+            MemoryNewADD[physPagNum].vpn = vpn;
+        }
+
+    } else {
+        printf("Data was not initialized: \n" );
+        if (!isValid && !isDirty) {
+            physPagNum = MiMapa->Find();
+            if(physPagNum == -1) {
+                physPagNum = searchVictim(vpn);
+                if(pageTable[machine->tlb[pageIterator].virtualPage].dirty) {
+                    int space = swapMap->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[pageIterator].physicalPage)]),
+                                    PageSize,space*PageSize);
+                    MiMapa->Clear(machine->tlb[pageIterator].physicalPage);
+                    pageTable[machine->tlb[pageIterator].virtualPage].physicalPage = space;
+                    pageTable[machine->tlb[pageIterator].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = physPagNum;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+            MemoryNewADD[physPagNum].vpn = vpn;
+        } else if(isValid) {
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+        } else {
+            int oldMemory = pageTable[vpn].physicalPage;
+            physPagNum = MiMapa->Find();
+            if(physPagNum == -1) {
+                physPagNum = searchVictim(vpn);
+                if(pageTable[machine->tlb[pageIterator].virtualPage].dirty) {
+                    int space = swapMap->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[pageIterator].physicalPage)]),
+                                    PageSize,space*PageSize);
+                    MiMapa->Clear(machine->tlb[pageIterator].physicalPage);
+                    pageTable[machine->tlb[pageIterator].virtualPage].physicalPage = space;
+                    pageTable[machine->tlb[pageIterator].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = physPagNum;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = true;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn, pageIterator);
+            pageIterator = ++pageIterator % 4;
+            Swap->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*128]),
+                            PageSize, oldMemory*PageSize);
+            swapMap->Clear(oldMemory);
+            MemoryNewADD[physPagNum].vpn = vpn;
+        }
+    }
 }
 
 //----------------------------------------------------------------------
@@ -231,8 +378,12 @@ AddrSpace::InitRegisters()
 //	For now, nothing!
 //----------------------------------------------------------------------
 
-void AddrSpace::SaveState() 
-{}
+void AddrSpace::SaveState() {
+    for (int i = 0; i < 4; i++) {
+        pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;
+        pageTable[machine->tlb[i].virtualPage].valid = machine->tlb[i].valid;
+    }
+}
 
 //----------------------------------------------------------------------
 // AddrSpace::RestoreState
@@ -244,6 +395,36 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
-    machine->pageTable = pageTable;
-    machine->pageTableSize = numPages;
+    #ifndef VM
+        machine->pageTable = pageTable;
+        machine->pageTableSize = numPages;
+    #endif
+}
+
+
+void AddrSpace::copyMemory(int indexPage, int indexTable) {
+    machine->tlb[indexTable].virtualPage = pageTable[indexPage].virtualPage;
+    machine->tlb[indexTable].physicalPage = pageTable[indexPage].physicalPage;
+    machine->tlb[indexTable].valid = pageTable[indexPage].valid;
+    machine->tlb[indexTable].use = pageTable[indexPage].use;
+    machine->tlb[indexTable].dirty = pageTable[indexPage].dirty;
+    machine->tlb[indexTable].readOnly = pageTable[indexPage].readOnly;
+}
+
+int AddrSpace::searchVictim(int vpn) {
+    int victim = -69;
+    bool jobsFinished = false;// una gran referencia a Kobe Bryant si me lo preguntan
+    while (!jobsFinished) {//job's not finished
+        for (int index = 1; index < 32; index++) {
+            if(!pageTable[MemoryNewADD[index].vpn].use) {
+                victim = pageTable[MemoryNewADD[index].vpn].physicalPage;
+                jobsFinished = true;
+                break;
+            } else {
+                pageTable[MemoryNewADD[index].vpn].use = false;
+            }
+        }
+        return victim;
+    }
+
 }
