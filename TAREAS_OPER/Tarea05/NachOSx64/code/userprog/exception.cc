@@ -692,11 +692,11 @@ void ExceptionHandler(ExceptionType which)
       printf("Unexpected page fault exception %d\n", which);
       int virtualADD = machine->ReadRegister(39);
       printf("Virtual Address: %d " , virtualADD , "\n");
-      int vpn = (unsigned)virtualADD / PageSize;
-      printf("Virtual Page Number: %d " , vpn , "\n");
+      int vpn = virtualADD / PageSize;
+      printf("Virtual Page Number: %d " , vpn , "\n");//cicle enjoyer???
       pageFaults++;
       printf("Page Faults: %d " , pageFaults , "\n");
-      ///currentThread->space->MoverAMemoria(vpn);Revisar la clase ADDRspace para ver si se puede hacer esto
+      currentThread->space->MoverAMemoria(vpn);//Revisar la clase ADDRspace para ver si se puede hacer esto
       break;
 
    case ReadOnlyException:
