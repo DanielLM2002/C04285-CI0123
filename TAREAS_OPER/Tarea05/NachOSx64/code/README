@@ -1,5 +1,0 @@
-El siguiente trabajo solo cuenta con implementaciones testeadas de fork, halt, addrspace y yield.
-El archivo de prueba de fork se encuentra en la carpeta test con el nombre fork.c
-Por falta de tiempo no se probó (ni implementó por completo) el join y exec, pero si se tenia una idea general
-de que hacer con el vecto rde semáforos para la sincronizacion de los procesos en el join
-y de como hacer un programa similar al startprocess para el exec.
