@@ -687,6 +687,20 @@ void ExceptionHandler(ExceptionType which)
 
    case PageFaultException:
    {
+      int i = -1;
+      int pageFaultsCases = 0;
+      printf("PageFaultException");
+      int badVAddr = machine->ReadRegisters(39);
+      int vpn = badVAddr / PageSize;
+      printf("BadVAddr: %d, vpn: %d")
+      if (i < 0 || i >= NumPhysPages) {
+         printf("Bad virtual page number %d!");
+         ASSERT(false);
+      }
+      i = vpn;
+      pageFaultsCases++;
+      printf("Amount of pageFaultsCases: %d", pageFaultsCases);
+      currentThread->space->swapMem(vpn);
       break;
    }
 

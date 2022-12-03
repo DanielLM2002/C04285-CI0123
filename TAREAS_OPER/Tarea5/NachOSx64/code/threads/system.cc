@@ -45,6 +45,9 @@ Machine *machine;	// user program memory and registers
 PostOffice *postOffice;
 #endif
 
+#ifdef VM
+BitMap * MiMapa2; //Mapa de bits para la memoria virtual
+#endif
 
 // External definition, to allow us to take a pointer to this function
 extern void Cleanup();

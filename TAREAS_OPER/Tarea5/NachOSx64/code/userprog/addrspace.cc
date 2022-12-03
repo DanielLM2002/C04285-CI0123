@@ -48,7 +48,7 @@ SwapHeader (NoffHeader *noffH)
 
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
-// 	Create an address space to run a user program.
+// 	Create an address memSpace to run a user program.
 //	Load the program from a file "executable", and set everything
 //	up so that we can start executing user instructions.
 //
@@ -150,7 +150,7 @@ AddrSpace::AddrSpace(OpenFile *executable, const char *filename) {
 
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
-// 	Dealloate an address space.  Nothing for now!
+// 	Dealloate an address memSpace.  Nothing for now!
 //----------------------------------------------------------------------
 
 AddrSpace::~AddrSpace()
@@ -183,7 +183,7 @@ AddrSpace::InitRegisters()
     // of branch delay possibility
     machine->WriteRegister(NextPCReg, 4);
 
-   // Set the stack register to the end of the address space, where we
+   // Set the stack register to the end of the address memSpace, where we
    // allocated the stack; but subtract off a bit, to make sure we don't
    // accidentally reference off the end!
     machine->WriteRegister(StackReg, numPages * PageSize - 16);
@@ -193,7 +193,7 @@ AddrSpace::InitRegisters()
 //----------------------------------------------------------------------
 // AddrSpace::SaveState
 // 	On a context switch, save any machine state, specific
-//	to this address space, that needs saving.
+//	to this address memSpace, that needs saving.
 //
 //	For now, nothing!
 //----------------------------------------------------------------------
@@ -211,7 +211,7 @@ void AddrSpace::SaveState()
 //----------------------------------------------------------------------
 // AddrSpace::RestoreState
 // 	On a context switch, restore the machine state so that
-//	this address space can run.
+//	this address memSpace can run.
 //
 //      For now, tell the machine where to find the page table.
 //----------------------------------------------------------------------
@@ -256,7 +256,7 @@ void AddrSpace::SwapMem(int vpn) {
     for (int i = 0; i < 4; i++) {
         pageTable[machine->tlb[i].virtualPage].use = machine->tlb[i].use;
         pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;
-        pageTable[machine->tlb[i].virtualPage].valid = machine->tlb[i].valid;//remover si falla
+        //pageTable[machine->tlb[i].virtualPage].valid = machine->tlb[i].valid;//remover si falla
     }
     OpenFile *swappedFile = fileSystem->Open("executableFile");
     int numPages1= divRoundUp(noffH1.code.size, PageSize);
@@ -268,6 +268,7 @@ void AddrSpace::SwapMem(int vpn) {
     if (vpn < numPages1){
         printf("Code of vpn \n");
         if (!isValid) {
+            //cargar la memoria y la tlb
             newVictim = MiMapa->Find();
             if (newVictim == -1) {
                 newVictim = searchVictim(vpn);
@@ -283,20 +284,119 @@ void AddrSpace::SwapMem(int vpn) {
             swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+vpn*PageSize);
             ipt[newVictim].vpn = vpn;
         } else {
+            // pasar a tlb
             copyMemory(vpn,iterartor);
             iterartor = (iterartor + 1) % 4;
         }
     } else if (vpn < numPages2) {
         printf("Data was not inicialized \n");
         if (!isValid && isDirty) {
+            //cargar la memoria y la tlb
             newVictim = MiMapa->Find();
-            if (pageTable[machine->tlb[iterartor].virtualPage].dirty) {
-                int memSpace = swapMap->Find();
-                Swap->WriteAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+(vpn*PageSize));
-                MiMapa->Clear(machine->tlb[iterartor].physicalPage);
-                pageTable[machine->tlb[iterartor].virtualPage].valid = false;
-                pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
+            if (newVictim == -1) {
+                newVictim = searchVictim(vpn);
+                if(pageTable[machine->tlb[iterator].virtualPage].dirty) {
+                    int memSpace = MiMapa2->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iterator].physicalPage);
+                    pageTable[machine->tlb[iterator].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iterator].virtualPage].valid = false;
+                }
             }
+            pageTable[vpn].physicalPage = newVictim;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+            swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+numPages1*PageSize+vpn*PageSize);//quitar numpages1 y el rpimer pageSize
+            ipt[newVictim].vpn = vpn;
+        } else {
+            // pasar a tlb la page table
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+        }
+    } else if (vpn < numPages2) {
+        printf("Data was inicialized \n");
+        if (!isDirty && isValid) {
+            // cargar a la memoria el nuevo espacio asignado del TLB
+            newVictim = MiMapa->Find();
+            if (newVictim == -1) {
+                newVictim = searchVictim(vpn);
+                if(pageTable[machine->tlb[iterartor].virtualPage].dirty) {
+                    int memSpace = MiMapa2->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
+                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = newVictim;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+            swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * 128]), PageSize, memSpace * PageSize);//quitar numpages1 y el rpimer pageSize
+            MiMapa2->Clear(memSpace);
+            ipt[newVictim].vpn = vpn;
+        }
+    } else {
+        printf("Data that wasnt inicialized \n");
+        if(!isValid && isDirty) {
+            //Cargar a la tage table y a la memoria
+            newVictim = MiMapa->Find();
+            if(newVictim == -1) {
+                newVictim = searchVictim(vpn);
+                if(pageTable[machine->tlb[iterartor].virtualPage].dirty){
+                    int memSpace = MiMapa2->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
+                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = newVictim;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+            ipt[newVictim].vpn = vpn;
+        }else if(isValid) {
+            // pasar a tlb
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+        } else {
+            //cargar a la memoria y a la tlb
+            newVictim = MiMapa->Find();
+            if(newVictim == -1) {
+                newVictim = searchVictim(vpn);
+                if(pageTable[machine->tlb[iterartor].virtualPage].dirty){
+                    int memSpace = MiMapa2->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
+                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                }
+            }
+            pageTable[vpn].physicalPage = newVictim;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = false;
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+            Swap->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*128]), PageSize, memSpace*PageSize);
+            MiMapa2->Clear(memSpace);
+            ipt[newVictim].vpn = vpn;
         }
     }
 
