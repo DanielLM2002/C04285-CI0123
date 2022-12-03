@@ -19,7 +19,7 @@
 #include "system.h"
 #include "addrspace.h"
 #include "openfile.h"
-#include "noff.h"
+//#include "noff.h"
 #include "synch.h"
 
 //----------------------------------------------------------------------
@@ -65,7 +65,7 @@ SwapHeader (NoffHeader *noffH)
 * Constructor de la clase AddrSpace que acepta un bitmap padre
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
-AddrSpace::AddrSpace(AddrSpace* parentSpace) {
+AddrSpace::AddrSpace(AddrSpace *parentSpace) {
     numPages = parentSpace->numPages; 
     pageTable = new TranslationEntry[parentSpace->numPages];
     unsigned int i = 0;
@@ -87,62 +87,61 @@ AddrSpace::AddrSpace(AddrSpace* parentSpace) {
     }
 }
 
-AddrSpace::AddrSpace(OpenFile *executable)
-{
+AddrSpace::AddrSpace(OpenFile *executable, const char *filename) {
+    if (Swap == NULL) {
+        Swap = fileSystem->Open("swap");
+        ipt = new TPI;
+    }
+    #ifdef VM
+        strcpy (executableFile, filename);
+    #endif
     NoffHeader noffH;
     unsigned int i, size;
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
-    if ((noffH.noffMagic != NOFFMAGIC) && 
-		(WordToHost(noffH.noffMagic) == NOFFMAGIC))
-    	SwapHeader(&noffH);
+    if ((noffH.noffMagic != NOFFMAGIC) && (WordToHost(noffH.noffMagic) == NOFFMAGIC)) SwapHeader(&noffH);
     ASSERT(noffH.noffMagic == NOFFMAGIC);
-
-// how big is address space?
-    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
-			+ UserStackSize;	// we need to increase the size
-						// to leave room for the stack
-    numPages = divRoundUp(size, PageSize);
-    size = numPages * PageSize;
-
-    ASSERT(numPages <= NumPhysPages);		// check we're not trying
-						// to run anything too big --
-						// at least until we have
-						// virtual memory
-
-    DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
-					numPages, size);
-// first, set up the translation 
-    pageTable = new TranslationEntry[numPages];
-    for (i = 0; i < numPages; i++) {
-	pageTable[i].virtualPage = MiMapa->Find();	// for now, virtual page # = phys page #
-    Lock MiCandado("MiCandado");
-	pageTable[i].physicalPage = i;
-	pageTable[i].valid = true;
-	pageTable[i].use = false;
-	pageTable[i].dirty = false;
-	pageTable[i].readOnly = false;  // if the code segment was entirely on 
-					// a separate page, we could set its 
-					// pages to be read-only
-    }
+        noffH1 = noffH;
     
-// zero out the entire address space, to zero the unitialized data segment 
-// and the stack segment
-    //bzero(machine->mainMemory, size);
+    size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;
+    numPages = divRoundUp(size, PageSize);
+    size = numPages * PageSize;	// we need to increase the size
 
-// then, copy in the code and data segments into memory
-    if (noffH.code.size > 0) {
-        DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
-			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
+        #ifndef VM
+            ASSERT(numPages <= NumPhysPages);
+        #endif
+
+    pageTable = new TranslationEntry[numPages];
+    for (int i = 0; i < numPages; i++) {
+        pageTable[i].virtualPage = i;
+        #ifndef VM
+            pageTable[i].physicalPage = MiMapa->Find();
+            pageTable[i].valid = true;
+        #else
+            pageTable[i].physicalPage = -1;
+            pageTable[i].valid = false;
+        #endif
+        pageTable[i].use = false;
+        pageTable[i].dirty = false;
+        pageTable[i].readOnly = false;
+
     }
-    if (noffH.initData.size > 0) {
-        DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
-			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
-    }
+
+    #ifndef VM
+        int numPages2 = divRoundUp(noffH.code.size, numPages);
+        int memoryDirectory = noffH.code.inFileAddr;
+        for (int j = 0; j < numPages2; j++) {
+            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * 128]), PageSize, memoryDirectory);
+            memoryDirectory += 128;
+        }
+
+        int numPages3 = divRoundUp(noffH.initData.size, numPages);
+        memoryDirectory = noffH.initData.inFileAddr;
+        for (int j = numPages2; j < numPages3; j++) {
+            executable->ReadAt(&(machine->mainMemory[pageTable[j].physicalPage * 128]), PageSize, memoryDirectory);
+            memoryDirectory += 128;
+        }
+    #endif
 
 }
 
