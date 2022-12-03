@@ -145,6 +145,8 @@ AddrSpace::AddrSpace(OpenFile *executable, const char *filename) {
 
 }
 
+
+
 //----------------------------------------------------------------------
 // AddrSpace::~AddrSpace
 // 	Dealloate an address space.  Nothing for now!
@@ -196,7 +198,14 @@ AddrSpace::InitRegisters()
 //----------------------------------------------------------------------
 
 void AddrSpace::SaveState() 
-{}
+{
+    for (int i = 0; i < 4 ; i++) {
+        pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;
+        pageTable[machine->tlb[i].virtualPage].valid = machine->tlb[i].valid;
+    }
+}
+
+
 
 //----------------------------------------------------------------------
 // AddrSpace::RestoreState
@@ -208,6 +217,18 @@ void AddrSpace::SaveState()
 
 void AddrSpace::RestoreState() 
 {
+    #ifndef VM
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
+    #endif
+}
+
+void AddrSpace::copyMemory(int indexPageTable, int indexTLB) {
+    machine->tlb[indexTLB].virtualPage = pageTable[indexPageTable].virtualPage;
+    machine->tlb[indexTLB].physicalPage = pageTable[indexPageTable].physicalPage;
+    machine->tlb[indexTLB].valid = pageTable[indexPageTable].valid;
+    machine->tlb[indexTLB].use = pageTable[indexPageTable].use;
+    machine->tlb[indexTLB].dirty = pageTable[indexPageTable].dirty;
+    machine->tlb[indexTLB].readOnly = pageTable[indexPageTable].readOnly;
+
 }
