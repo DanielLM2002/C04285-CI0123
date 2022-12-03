@@ -106,7 +106,7 @@ AddrSpace::AddrSpace(OpenFile *executable, const char *filename) {
     
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size + UserStackSize;
     numPages = divRoundUp(size, PageSize);
-    size = numPages * PageSize;	// we need to increase the size
+    size = numPages * PageSize;	
 
         #ifndef VM
             ASSERT(numPages <= NumPhysPages);
@@ -232,24 +232,6 @@ void AddrSpace::copyMemory(int indexPageTable, int indexOfMem) {
     machine->tlb[indexOfMem].dirty = pageTable[indexPageTable].dirty;
     machine->tlb[indexOfMem].readOnly = pageTable[indexPageTable].readOnly;
 
-}
-
-int AddrSpace::searchVictim(int vpn) {
-    bool ready = false;
-    int victim = -1;
-    while(!ready) {
-        for (int i = 1 ; i<32; i++) {
-            if (!pageTable[ipt[i].vpn].use) {
-                victim = i;
-                ready = true;
-                break;
-            }
-            else {
-                pageTable[ipt[i].vpn].use = false;
-            }
-        }
-    }
-    return victim;
 }
 
 void AddrSpace::SwapMem(int vpn) {
@@ -403,3 +385,38 @@ void AddrSpace::SwapMem(int vpn) {
     }
 
 }
+
+int AddrSpace::searchVictim(int vpn) {
+    int index = -1;
+    int min = 100000000;
+    for (int i = 0; i < TLBSize; i++) {
+        if (machine->tlb[i].valid == false) {
+            index = i;
+            break;
+        }
+        if (machine->tlb[i].use == false) {
+            index = i;
+            break;
+        }
+        if (machine->tlb[i].use == true) {
+            machine->tlb[i].use = false;
+            if (machine->tlb[i].dirty == true) {
+                int vpn = machine->tlb[i].virtualPage;
+                int ppn = machine->tlb[i].physicalPage;
+                Swap->WriteAt(&(machine->mainMemory[ppn * PageSize]), PageSize, vpn * PageSize);
+                pageTable[vpn].dirty = false;
+            }
+        }
+    }
+    if (index == -1) {
+        index = rand() % TLBSize;
+        if (machine->tlb[index].dirty == true) {
+            int vpn = machine->tlb[index].virtualPage;
+            int ppn = machine->tlb[index].physicalPage;
+            Swap->WriteAt(&(machine->mainMemory[ppn * PageSize]), PageSize, vpn * PageSize);
+            pageTable[vpn].dirty = false;
+        }
+    }
+    return index;
+}
+
