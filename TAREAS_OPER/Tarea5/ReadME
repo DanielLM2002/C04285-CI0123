@@ -1,0 +1,6 @@
+Se intentó hacer el swap con el second chance, pero no se pudo.
+NAchos me daba errores a la hora de declarar otro bitmap y por ende no podia hacer el find necesario en el nuevo bitmap para acomodar
+los datos y la memoria vieja.
+Tambien varias de las herrameintas que requería segun el profesor como le fileSystem o el Swap( no eran reconocidos por problemas de
+defines
+:(
