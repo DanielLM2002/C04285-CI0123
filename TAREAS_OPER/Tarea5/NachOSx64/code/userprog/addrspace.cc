@@ -90,7 +90,7 @@ AddrSpace::AddrSpace(AddrSpace *parentSpace) {
 
 AddrSpace::AddrSpace(OpenFile *executable, const char *filename) {
     if (Swap == NULL) {
-        Swap = fileSystem->Open("swap");
+        Swap = fileSystem->Open("test");
         ipt = new TPI;
     }
     #ifdef VM
@@ -234,7 +234,7 @@ void AddrSpace::copyMemory(int indexPageTable, int indexOfMem) {
 
 }
 
-void AddrSpace::SwapMem(int vpn) {
+void AddrSpace::SwapMem(int vpn) { //metodo parcialmente inspirado en https://github.com/daviddwlee84/OperatingSystem/blob/master/Nachos/nachos-3.4/code/userprog/addrspace.cc
     for (int i = 0; i < 4; i++) {
         pageTable[machine->tlb[i].virtualPage].use = machine->tlb[i].use;
         pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;

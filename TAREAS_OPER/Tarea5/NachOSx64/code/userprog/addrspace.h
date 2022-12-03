@@ -61,7 +61,7 @@ class AddrSpace {
 					// for now!
       unsigned int numPages;		// Number of pages in the virtual 
 					// address space
-    char executableFile[128];
+    char executableFile[128];//nombre del archivo ejecutable con el tamaño definido por el profesor
     NoffHeader noffH1;
     OpenFile *Swap = NULL;
 };
