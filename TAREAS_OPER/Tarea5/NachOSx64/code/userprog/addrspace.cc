@@ -65,7 +65,7 @@ SwapHeader (NoffHeader *noffH)
 * Constructor de la clase AddrSpace que acepta un bitmap padre
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
-int iterartor = 0;
+int iter = 0;
 AddrSpace::AddrSpace(AddrSpace *parentSpace) {
     numPages = parentSpace->numPages; 
     pageTable = new TranslationEntry[parentSpace->numPages];
@@ -279,14 +279,14 @@ void AddrSpace::SwapMem(int vpn) {
             pageTable[vpn].use = true;
             pageTable[vpn].dirty = false;
             pageTable[vpn].readOnly = true;
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
             swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+vpn*PageSize);
             ipt[newVictim].vpn = vpn;
         } else {
             // pasar a tlb
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
         }
     } else if (vpn < numPages2) {
         printf("Data was not inicialized \n");
@@ -295,12 +295,12 @@ void AddrSpace::SwapMem(int vpn) {
             newVictim = MiMapa->Find();
             if (newVictim == -1) {
                 newVictim = searchVictim(vpn);
-                if(pageTable[machine->tlb[iterator].virtualPage].dirty) {
-                    int memSpace = MiMapa2->Find();
-                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
-                    MiMapa->Clear(machine->tlb[iterator].physicalPage);
-                    pageTable[machine->tlb[iterator].virtualPage].physicalPage = memSpace;
-                    pageTable[machine->tlb[iterator].virtualPage].valid = false;
+                if(pageTable[machine->tlb[iter].virtualPage].dirty) {
+                    int memSpace = MiMapa->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[iter].physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iter].physicalPage);
+                    pageTable[machine->tlb[iter].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iter].virtualPage].valid = false;
                 }
             }
             pageTable[vpn].physicalPage = newVictim;
@@ -309,14 +309,14 @@ void AddrSpace::SwapMem(int vpn) {
             pageTable[vpn].use = true;
             pageTable[vpn].dirty = false;
             pageTable[vpn].readOnly = false;
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
             swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+numPages1*PageSize+vpn*PageSize);//quitar numpages1 y el rpimer pageSize
             ipt[newVictim].vpn = vpn;
         } else {
             // pasar a tlb la page table
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
         }
     } else if (vpn < numPages2) {
         printf("Data was inicialized \n");
@@ -325,12 +325,12 @@ void AddrSpace::SwapMem(int vpn) {
             newVictim = MiMapa->Find();
             if (newVictim == -1) {
                 newVictim = searchVictim(vpn);
-                if(pageTable[machine->tlb[iterartor].virtualPage].dirty) {
-                    int memSpace = MiMapa2->Find();
-                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
-                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
-                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
-                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                if(pageTable[machine->tlb[iter].virtualPage].dirty) {
+                    int memSpace = MiMapa->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[iter].physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iter].physicalPage);
+                    pageTable[machine->tlb[iter].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iter].virtualPage].valid = false;
                 }
             }
             pageTable[vpn].physicalPage = newVictim;
@@ -339,10 +339,11 @@ void AddrSpace::SwapMem(int vpn) {
             pageTable[vpn].use = true;
             pageTable[vpn].dirty = false;
             pageTable[vpn].readOnly = false;
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
-            swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * 128]), PageSize, memSpace * PageSize);//quitar numpages1 y el rpimer pageSize
-            MiMapa2->Clear(memSpace);
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
+            swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * 128]), PageSize, 128 * PageSize);//quitar numpages1 y el rpimer pageSize
+            int memSpace = MiMapa->Find();
+            MiMapa->Clear(memSpace);
             ipt[newVictim].vpn = vpn;
         }
     } else {
@@ -352,12 +353,12 @@ void AddrSpace::SwapMem(int vpn) {
             newVictim = MiMapa->Find();
             if(newVictim == -1) {
                 newVictim = searchVictim(vpn);
-                if(pageTable[machine->tlb[iterartor].virtualPage].dirty){
-                    int memSpace = MiMapa2->Find();
-                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
-                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
-                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
-                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                if(pageTable[machine->tlb[iter].virtualPage].dirty){
+                    int memSpace = MiMapa->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[iter].physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iter].physicalPage);
+                    pageTable[machine->tlb[iter].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iter].virtualPage].valid = false;
                 }
             }
             pageTable[vpn].physicalPage = newVictim;
@@ -366,24 +367,24 @@ void AddrSpace::SwapMem(int vpn) {
             pageTable[vpn].use = true;
             pageTable[vpn].dirty = false;
             pageTable[vpn].readOnly = false;
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
             ipt[newVictim].vpn = vpn;
         }else if(isValid) {
             // pasar a tlb
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
         } else {
             //cargar a la memoria y a la tlb
             newVictim = MiMapa->Find();
             if(newVictim == -1) {
                 newVictim = searchVictim(vpn);
-                if(pageTable[machine->tlb[iterartor].virtualPage].dirty){
-                    int memSpace = MiMapa2->Find();
-                    Swap->WriteAt(&(machine->mainMemory[(pageTable(iterartor).physicalPage)]), PageSize, memSpace*PageSize);
-                    MiMapa->Clear(machine->tlb[iterartor].physicalPage);
-                    pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
-                    pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                if(pageTable[machine->tlb[iter].virtualPage].dirty){
+                    int memSpace = MiMapa->Find();
+                    Swap->WriteAt(&(machine->mainMemory[(pageTable[iter].physicalPage)]), PageSize, memSpace*PageSize);
+                    MiMapa->Clear(machine->tlb[iter].physicalPage);
+                    pageTable[machine->tlb[iter].virtualPage].physicalPage = memSpace;
+                    pageTable[machine->tlb[iter].virtualPage].valid = false;
                 }
             }
             pageTable[vpn].physicalPage = newVictim;
@@ -392,14 +393,13 @@ void AddrSpace::SwapMem(int vpn) {
             pageTable[vpn].use = true;
             pageTable[vpn].dirty = false;
             pageTable[vpn].readOnly = false;
-            copyMemory(vpn,iterartor);
-            iterartor = (iterartor + 1) % 4;
-            Swap->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*128]), PageSize, memSpace*PageSize);
-            MiMapa2->Clear(memSpace);
+            copyMemory(vpn,iter);
+            iter = (iter + 1) % 4;
+            Swap->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage)*128]), PageSize, 128*PageSize);
+            int memSpace = MiMapa->Find();
+            MiMapa->Clear(memSpace);
             ipt[newVictim].vpn = vpn;
         }
     }
 
 }
-
-
