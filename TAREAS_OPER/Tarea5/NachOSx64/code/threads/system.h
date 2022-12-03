@@ -53,9 +53,21 @@ extern PostOffice* postOffice;
 
 #ifdef USER_PROGRAM
 #include "machine.h"
-extern Machine* machine;	// user program memory and registers
+extern Machine* machine;
+
+
+//#ifdef VM
+#include "bitmap.h"
+extern BitMap* swapMap;	// user program memory and registers
+//#endif
 
 extern BitMap * MiMapa;		// Declares a global variable defined elsewhere
 #endif
+
+#ifdef VM
+#include "bitmap.h"
+extern BitMap* swapMap;	// user program memory and registers
+#endif
+
 
 #endif // SYSTEM_H

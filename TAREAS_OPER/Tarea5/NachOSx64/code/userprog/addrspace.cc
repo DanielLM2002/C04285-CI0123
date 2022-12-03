@@ -65,6 +65,7 @@ SwapHeader (NoffHeader *noffH)
 * Constructor de la clase AddrSpace que acepta un bitmap padre
 * @param executable Archivo que contiene el codigo del programa a ejecutar
 */
+int iterartor = 0;
 AddrSpace::AddrSpace(AddrSpace *parentSpace) {
     numPages = parentSpace->numPages; 
     pageTable = new TranslationEntry[parentSpace->numPages];
@@ -223,13 +224,13 @@ void AddrSpace::RestoreState()
     #endif
 }
 
-void AddrSpace::copyMemory(int indexPageTable, int indexTLB) {
-    machine->tlb[indexTLB].virtualPage = pageTable[indexPageTable].virtualPage;
-    machine->tlb[indexTLB].physicalPage = pageTable[indexPageTable].physicalPage;
-    machine->tlb[indexTLB].valid = pageTable[indexPageTable].valid;
-    machine->tlb[indexTLB].use = pageTable[indexPageTable].use;
-    machine->tlb[indexTLB].dirty = pageTable[indexPageTable].dirty;
-    machine->tlb[indexTLB].readOnly = pageTable[indexPageTable].readOnly;
+void AddrSpace::copyMemory(int indexPageTable, int indexOfMem) {
+    machine->tlb[indexOfMem].virtualPage = pageTable[indexPageTable].virtualPage;
+    machine->tlb[indexOfMem].physicalPage = pageTable[indexPageTable].physicalPage;
+    machine->tlb[indexOfMem].valid = pageTable[indexPageTable].valid;
+    machine->tlb[indexOfMem].use = pageTable[indexPageTable].use;
+    machine->tlb[indexOfMem].dirty = pageTable[indexPageTable].dirty;
+    machine->tlb[indexOfMem].readOnly = pageTable[indexPageTable].readOnly;
 
 }
 
@@ -249,6 +250,56 @@ int AddrSpace::searchVictim(int vpn) {
         }
     }
     return victim;
+}
+
+void AddrSpace::SwapMem(int vpn) {
+    for (int i = 0; i < 4; i++) {
+        pageTable[machine->tlb[i].virtualPage].use = machine->tlb[i].use;
+        pageTable[machine->tlb[i].virtualPage].dirty = machine->tlb[i].dirty;
+        pageTable[machine->tlb[i].virtualPage].valid = machine->tlb[i].valid;//remover si falla
+    }
+    OpenFile *swappedFile = fileSystem->Open("executableFile");
+    int numPages1= divRoundUp(noffH1.code.size, PageSize);
+    int numPages2 = divRoundUp(noffH1.initData.size, PageSize);
+    int numPages3 = divRoundUp(noffH1.uninitData.size, PageSize);//remover si da problemas
+    bool isValid = false;
+    bool isDirty = false;
+    int newVictim = 0;
+    if (vpn < numPages1){
+        printf("Code of vpn \n");
+        if (!isValid) {
+            newVictim = MiMapa->Find();
+            if (newVictim == -1) {
+                newVictim = searchVictim(vpn);
+            }
+            pageTable[vpn].physicalPage = newVictim;
+            pageTable[vpn].virtualPage = vpn;
+            pageTable[vpn].valid = true;
+            pageTable[vpn].use = true;
+            pageTable[vpn].dirty = false;
+            pageTable[vpn].readOnly = true;
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+            swappedFile->ReadAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+vpn*PageSize);
+            ipt[newVictim].vpn = vpn;
+        } else {
+            copyMemory(vpn,iterartor);
+            iterartor = (iterartor + 1) % 4;
+        }
+    } else if (vpn < numPages2) {
+        printf("Data was not inicialized \n");
+        if (!isValid && isDirty) {
+            newVictim = MiMapa->Find();
+            if (pageTable[machine->tlb[iterartor].virtualPage].dirty) {
+                int memSpace = swapMap->Find();
+                Swap->WriteAt(&(machine->mainMemory[(pageTable[vpn].physicalPage) * PageSize]), PageSize, sizeof(NoffHeader)+(vpn*PageSize));
+                MiMapa->Clear(machine->tlb[iterartor].physicalPage);
+                pageTable[machine->tlb[iterartor].virtualPage].valid = false;
+                pageTable[machine->tlb[iterartor].virtualPage].physicalPage = memSpace;
+            }
+        }
+    }
+
 }
 
 
