@@ -232,3 +232,23 @@ void AddrSpace::copyMemory(int indexPageTable, int indexTLB) {
     machine->tlb[indexTLB].readOnly = pageTable[indexPageTable].readOnly;
 
 }
+
+int AddrSpace::searchVictim(int vpn) {
+    bool ready = false;
+    int victim = -1;
+    while(!ready) {
+        for (int i = 1 ; i<32; i++) {
+            if (!pageTable[ipt[i].vpn].use) {
+                victim = i;
+                ready = true;
+                break;
+            }
+            else {
+                pageTable[ipt[i].vpn].use = false;
+            }
+        }
+    }
+    return victim;
+}
+
+
